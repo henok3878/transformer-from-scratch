@@ -1,0 +1,12 @@
+name: transformer-cpu
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+
+dependencies:
+  - python=3.12
+  - numpy
+  - pytorch
+  - torchvision
+  - torchaudio

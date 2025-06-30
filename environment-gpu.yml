@@ -1,0 +1,13 @@
+name: transformer-gpu
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - nvidia
+
+dependencies:
+  - python=3.12
+  - numpy
+  - pytorch
+  - pytorch-cuda=11.8
+
