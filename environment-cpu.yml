@@ -8,5 +8,5 @@ dependencies:
   - python=3.12
   - numpy
   - pytorch
-  - torchvision
-  - torchaudio
+  - pytest 
+  - pytest-cov 
