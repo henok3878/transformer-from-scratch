@@ -19,7 +19,7 @@ class LayerNorm(nn.Module):
             Normalized `x` over the last dim to zero mean and unit variance with
             scale and shfit applied by learnable weight and bias.
         """
-        mean = x.mean(dim=x.size(-1), keepdim=True)  # same shape with x
-        std = x.std(dim=x.size(-1), keepdim=True)  # same shape with x
+        mean = x.mean(dim=-1, keepdim=True)  # same shape with x
+        std = x.std(dim=-1, keepdim=True)  # same shape with x
 
         return self.weight * (x - mean) / (std + self.eps) + self.bias
