@@ -1,5 +1,5 @@
 import torch
-from src.components.input_embedding import InputEmbedding
+from transformer.components.input_embedding import InputEmbedding
 
 
 def test_forward_shape():

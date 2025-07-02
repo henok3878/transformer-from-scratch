@@ -1,5 +1,5 @@
 import torch
-from src.components.positional_encoding import PositionalEncoding
+from transformer.components.positional_encoding import PositionalEncoding
 
 
 def test_forward_shape():
