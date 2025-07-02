@@ -1,5 +1,32 @@
-.venv/
-.DS_Store 
+# Python
 __pycache__/
-**/_pycache__/
-.pytest_cache/ 
+*.py[cod]
+*.so
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+.conda/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# macOS
+.DS_Store
+
+# VS Code 
+.vscode/
+
+# Model artifacts
+*.pth
+*.pt
+
+# Logs
+*.log
