@@ -1,4 +1,5 @@
 # Transformer From Scratch
+> 🚧 **Status:** In developmentment 
 
 A Transformer model implementation from scratch using PyTorch.
 
@@ -44,12 +45,12 @@ pytest --cov=transformer # With coverage
 ```
 src/transformer/
 ├── components/
-│   ├── attention.py           # Self-attention mechanism
 │   ├── multi_head.py          # Multi-head attention
 │   ├── encoder_block.py       # Transformer encoder
 │   ├── decoder_block.py       # Transformer decoder
 │   ├── input_embedding.py     # Token embeddings
 │   ├── positional_encoding.py # Position embeddings
+│   ├── feed_forward.py        # Position wise feed forward network
 │   └── layer_norm.py          # Layer normalization
 ├── transformer.py             # Complete model
 └── train.py                   # Training script
