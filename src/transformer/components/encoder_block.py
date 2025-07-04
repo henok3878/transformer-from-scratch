@@ -15,9 +15,11 @@ class EncoderBlock(nn.Module):
         self.self_attn = MultiHeadAttention(d_model, num_heads, dropout)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, source_mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
         # self attn
-        attn_output = self.self_attn(x, x)
+        attn_output = self.self_attn(x, x, mask=source_mask)
         # residual + norm for attn sublayer
         x = self.layer_norm1(x + self.dropout1(attn_output))
 
