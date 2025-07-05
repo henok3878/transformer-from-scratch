@@ -5,18 +5,20 @@ from transformer.components.multi_head import MultiHeadAttention
 from transformer.components.feed_forward import PositionwiseFeedForward
 
 
-class DecoderBlock(nn.Module):
+class DecoderLayer(nn.Module):
     def __init__(self, d_model: int, d_ff: int, num_heads: int, dropout: float = 0.1):
         super().__init__()
-        self.dropout1 = nn.Dropout(dropout)
-        self.dropout2 = nn.Dropout(dropout)
-        self.dropout3 = nn.Dropout(dropout)
-        self.layer_norm1 = LayerNorm(d_model)
-        self.layer_norm2 = LayerNorm(d_model)
-        self.layer_norm3 = LayerNorm(d_model)
         self.self_attn = MultiHeadAttention(d_model, num_heads, dropout)
+        self.dropout_self_attn = nn.Dropout(dropout)
+        self.norm_self_attn = LayerNorm(d_model)
+
         self.cross_attn = MultiHeadAttention(d_model, num_heads, dropout)
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
+        self.dropout_cross_attn = nn.Dropout(dropout)
+        self.norm_cross_attn = LayerNorm(d_model)
+
+        self.ffn = PositionwiseFeedForward(d_model, d_ff, dropout)
+        self.dropout_ffn = nn.Dropout(dropout)
+        self.norm_ffn = LayerNorm(d_model)
 
     def forward(
         self,
@@ -26,12 +28,12 @@ class DecoderBlock(nn.Module):
         kv_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         self_attn = self.self_attn(x, x, mask=target_mask)
-        x = self.layer_norm1(x + self.dropout1(self_attn))
+        x = self.norm_self_attn(x + self.dropout_self_attn(self_attn))
 
         cross_attn = self.cross_attn(x, kv, mask=kv_mask)
-        x = self.layer_norm2(x + self.dropout2(cross_attn))
+        x = self.norm_cross_attn(x + self.dropout_cross_attn(cross_attn))
 
-        ffn_output = self.feed_forward(x)
-        x = self.layer_norm3(x + self.dropout3(ffn_output))
+        ffn_out = self.ffn(x)
+        x = self.norm_ffn(x + self.dropout_ffn(ffn_out))
 
         return x
