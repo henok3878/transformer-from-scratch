@@ -9,23 +9,25 @@ from transformer.components.positional_encoding import PositionalEncoding
 class Transformer(nn.Module):
     def __init__(
         self,
-        vocab_size: int,
+        src_vocab_size: int,
+        tgt_vocab_size: int,
         d_model: int = 512,
         num_heads: int = 8,
         d_ff: int = 2048,
         num_encoder_layers=6,
         num_decoder_layers=6,
         dropout: float = 0.1,
-        max_len: int = 5000,
+        src_max_len: int = 5000,
+        tgt_max_len: int = 5000,
     ):
         super().__init__()
         self.src_embedding = nn.Sequential(
-            InputEmbedding(vocab_size, d_model),
-            PositionalEncoding(d_model=d_model, seq_len=max_len, dropout=dropout),
+            InputEmbedding(src_vocab_size, d_model),
+            PositionalEncoding(d_model=d_model, seq_len=src_max_len, dropout=dropout),
         )
         self.tgt_embedding = nn.Sequential(
-            InputEmbedding(vocab_size, d_model),
-            PositionalEncoding(d_model=d_model, seq_len=max_len, dropout=dropout),
+            InputEmbedding(tgt_vocab_size, d_model),
+            PositionalEncoding(d_model=d_model, seq_len=tgt_max_len, dropout=dropout),
         )
 
         self.encoder = Encoder(
@@ -44,7 +46,7 @@ class Transformer(nn.Module):
             dropout=dropout,
         )
 
-        self.output_proj = nn.Linear(d_model, vocab_size)
+        self.output_proj = nn.Linear(d_model, tgt_vocab_size)
 
     def forward(
         self,
@@ -63,7 +65,7 @@ class Transformer(nn.Module):
             kv_mask: (tgt_seq_len, src_seq_len) or (batch_size, 1, tgt_seq_len, src_seq_len) or (batch_size, num_heads, tgt_seq_len, src_seq_len)
 
         Returns:
-            logits of shape (batch_size, tgt_seq_len, vocab_size)
+            logits of shape (batch_size, tgt_seq_len, tgt_vocab_size)
         """
         # embed & encode
         src_emb = self.src_embedding(src_ids)  # (batch_size, src_seq_len, d_model)
