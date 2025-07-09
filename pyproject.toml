@@ -20,6 +20,10 @@ classifiers = [
 ]
 
 dependencies = [
+  "wandb",
+  "datasets",
+  "pyyaml", 
+  "tokenizers",
 ]
 
 [project.urls]
