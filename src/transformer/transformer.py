@@ -4,49 +4,46 @@ from transformer.components.encoder import Encoder
 from transformer.components.decoder import Decoder
 from transformer.components.input_embedding import InputEmbedding
 from transformer.components.positional_encoding import PositionalEncoding
+from config import ModelConfig
 
 
 class Transformer(nn.Module):
-    def __init__(
-        self,
-        src_vocab_size: int,
-        tgt_vocab_size: int,
-        d_model: int = 512,
-        num_heads: int = 8,
-        d_ff: int = 2048,
-        num_encoder_layers=6,
-        num_decoder_layers=6,
-        dropout: float = 0.1,
-        src_max_len: int = 5000,
-        tgt_max_len: int = 5000,
-    ):
+    def __init__(self, config: ModelConfig):
         super().__init__()
         self.src_embedding = nn.Sequential(
-            InputEmbedding(src_vocab_size, d_model),
-            PositionalEncoding(d_model=d_model, seq_len=src_max_len, dropout=dropout),
+            InputEmbedding(config.src_vocab_size, config.d_model),
+            PositionalEncoding(
+                d_model=config.d_model,
+                seq_len=config.src_max_len,
+                dropout=config.dropout,
+            ),
         )
         self.tgt_embedding = nn.Sequential(
-            InputEmbedding(tgt_vocab_size, d_model),
-            PositionalEncoding(d_model=d_model, seq_len=tgt_max_len, dropout=dropout),
+            InputEmbedding(config.tgt_vocab_size, config.d_model),
+            PositionalEncoding(
+                d_model=config.d_model,
+                seq_len=config.tgt_max_len,
+                dropout=config.dropout,
+            ),
         )
 
         self.encoder = Encoder(
-            num_layers=num_encoder_layers,
-            d_model=d_model,
-            d_ff=d_ff,
-            num_heads=num_heads,
-            dropout=dropout,
+            num_layers=config.num_encoder_layers,
+            d_model=config.d_model,
+            d_ff=config.d_ff,
+            num_heads=config.num_heads,
+            dropout=config.dropout,
         )
 
         self.decoder = Decoder(
-            num_layers=num_decoder_layers,
-            d_model=d_model,
-            d_ff=d_ff,
-            num_heads=num_heads,
-            dropout=dropout,
+            num_layers=config.num_decoder_layers,
+            d_model=config.d_model,
+            d_ff=config.d_ff,
+            num_heads=config.num_heads,
+            dropout=config.dropout,
         )
 
-        self.output_proj = nn.Linear(d_model, tgt_vocab_size)
+        self.output_proj = nn.Linear(config.d_model, config.tgt_vocab_size)
 
     def forward(
         self,

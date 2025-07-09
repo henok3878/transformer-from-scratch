@@ -1,6 +1,7 @@
 import torch
 import pytest
 from transformer.transformer import Transformer
+from config import ModelConfig
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +26,8 @@ def test_transformer_shape_and_dtype(
     src_vocab_size,
     tgt_vocab_size,
 ):
-    model = Transformer(
+    config = ModelConfig(
+        vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
         d_model=d_model,
@@ -34,7 +36,10 @@ def test_transformer_shape_and_dtype(
         num_encoder_layers=2,
         num_decoder_layers=2,
         dropout=0.0,
+        src_max_len=100,
+        tgt_max_len=100,
     )
+    model = Transformer(config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
     tgt_ids = torch.randint(0, tgt_vocab_size, (batch_size, tgt_seq_len))
 
@@ -61,7 +66,8 @@ def test_transformer_mask_optional_and_broadcasting(
     src_vocab_size=20,
     tgt_vocab_size=20,
 ):
-    model = Transformer(
+    config = ModelConfig(
+        vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
         d_model=d_model,
@@ -70,7 +76,10 @@ def test_transformer_mask_optional_and_broadcasting(
         num_encoder_layers=1,
         num_decoder_layers=1,
         dropout=0.0,
+        src_max_len=100,
+        tgt_max_len=100,
     )
+    model = Transformer(config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
     tgt_ids = torch.randint(0, tgt_vocab_size, (batch_size, tgt_seq_len))
 
@@ -99,7 +108,8 @@ def test_transformer_backprop_smoke(
     src_vocab_size=15,
     tgt_vocab_size=20,
 ):
-    model = Transformer(
+    config = ModelConfig(
+        vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
         d_model=d_model,
@@ -108,7 +118,10 @@ def test_transformer_backprop_smoke(
         num_encoder_layers=2,
         num_decoder_layers=2,
         dropout=0.1,
+        src_max_len=100,
+        tgt_max_len=100,
     )
+    model = Transformer(config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
     tgt_ids = torch.randint(0, tgt_vocab_size, (batch_size, tgt_seq_len))
 
@@ -118,3 +131,4 @@ def test_transformer_backprop_smoke(
 
     grads = [p.grad for p in model.parameters() if p.grad is not None]
     assert any((g.abs().sum() > 0) for g in grads)
+
