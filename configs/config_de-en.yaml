@@ -1,0 +1,25 @@
+model:
+  vocab_size: 50000 # shared vocabulary size incase of joint tokenization 
+  src_vocab_size: 32000
+  tgt_vocab_size: 32000
+  d_model: 512
+  num_heads: 8
+  d_ff: 2048
+  num_encoder_layers: 6
+  num_decoder_layers: 6
+  dropout: 0.1
+  src_max_len: 512
+  tgt_max_len: 512
+
+training:
+  batch_size: 128
+  epochs: 20
+  lr: 1.0e-4
+  num_workers: 8
+
+data:
+  dataset_name: "wmt19"
+  subset: "de-en"
+  lang_src: "en"
+  lang_tgt: "de"
+  tokenization_strategy: "joint" # "joint" or "separate"
