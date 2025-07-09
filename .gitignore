@@ -31,5 +31,10 @@ htmlcov/
 # Logs
 *.log
 
-# experiments 
+# data, tokenizers & experiments
+data/
+tokenziers/
 experiments/            
+
+# ignore wandb 
+wandb/
