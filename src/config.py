@@ -1,6 +1,10 @@
 import yaml
+from enum import Enum 
 from dataclasses import dataclass 
 
+class TokenizationStrategy(Enum):
+    JOINT = 'joint' 
+    SEPARATE = "separate"
 @dataclass
 class ModelConfig:
     vocab_size: int
@@ -28,7 +32,7 @@ class DataConfig:
     subset: str
     lang_src: str
     lang_tgt: str
-    tokenization_strategy: str
+    tokenization_strategy: TokenizationStrategy
 
 @dataclass
 class AppConfig:
@@ -44,6 +48,8 @@ def load_config(path: str) -> AppConfig:
     # create config objects from the dictionary
     model_cfg = ModelConfig(**yaml_data['model'])
     training_cfg = TrainingConfig(**yaml_data['training'])
-    data_cfg = DataConfig(**yaml_data['data'])
+    data_dict = yaml_data['data'] 
+    data_dict['tokenization_strategy'] = TokenizationStrategy(data_dict['tokenization_strategy']) 
+    data_cfg = DataConfig(**data_dict)
 
     return AppConfig(model=model_cfg, training=training_cfg, data=data_cfg)

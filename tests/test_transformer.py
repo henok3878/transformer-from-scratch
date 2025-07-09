@@ -1,7 +1,7 @@
 import torch
 import pytest
 from transformer.transformer import Transformer
-from config import ModelConfig
+from config import ModelConfig, DataConfig, TokenizationStrategy 
 
 
 @pytest.fixture(autouse=True)
@@ -10,13 +10,15 @@ def set_seed():
 
 
 @pytest.mark.parametrize(
-    "batch_size, src_seq_len, tgt_seq_len, d_model, d_ff, num_heads, src_vocab_size, tgt_vocab_size",
+    "batch_size, src_seq_len, tgt_seq_len, d_model, d_ff, num_heads, src_vocab_size, tgt_vocab_size, tokenization_strategy",
     [
-        (2, 16, 12, 32, 64, 4, 100, 96),
-        (3, 8, 8, 16, 32, 2, 50, 64),
+        (2, 16, 12, 32, 64, 4, 100, 96, "separate"),
+        (3, 8, 8, 16, 32, 2, 50, 64, "separate"),
+        (2, 16, 12, 32, 64, 4, 96, 96, "joint"),
+        (3, 8, 8, 16, 32, 2, 64, 64, "joint"),
     ],
 )
-def test_transformer_shape_and_dtype(
+def test_transformer_shape_and_dtype_separate(
     batch_size,
     src_seq_len,
     tgt_seq_len,
@@ -25,8 +27,9 @@ def test_transformer_shape_and_dtype(
     num_heads,
     src_vocab_size,
     tgt_vocab_size,
+    tokenization_strategy,
 ):
-    config = ModelConfig(
+    model_config = ModelConfig(
         vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
@@ -39,7 +42,11 @@ def test_transformer_shape_and_dtype(
         src_max_len=100,
         tgt_max_len=100,
     )
-    model = Transformer(config)
+    data_config = DataConfig(
+        "dataset_name", "subset", "en", "de", 
+        TokenizationStrategy(tokenization_strategy)
+    )
+    model = Transformer(model_config, data_config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
     tgt_ids = torch.randint(0, tgt_vocab_size, (batch_size, tgt_seq_len))
 
@@ -65,8 +72,9 @@ def test_transformer_mask_optional_and_broadcasting(
     num_heads=4,
     src_vocab_size=20,
     tgt_vocab_size=20,
+    tokenization_strategy="joint"
 ):
-    config = ModelConfig(
+    model_config = ModelConfig(
         vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
@@ -79,7 +87,11 @@ def test_transformer_mask_optional_and_broadcasting(
         src_max_len=100,
         tgt_max_len=100,
     )
-    model = Transformer(config)
+    data_config = DataConfig(
+        "dataset_name", "subset", "en", "de", 
+        TokenizationStrategy(tokenization_strategy)
+    )
+    model = Transformer(model_config, data_config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
     tgt_ids = torch.randint(0, tgt_vocab_size, (batch_size, tgt_seq_len))
 
@@ -107,8 +119,9 @@ def test_transformer_backprop_smoke(
     num_heads=4,
     src_vocab_size=15,
     tgt_vocab_size=20,
+    tokenization_strategy="separate"
 ):
-    config = ModelConfig(
+    model_config = ModelConfig(
         vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
@@ -121,7 +134,11 @@ def test_transformer_backprop_smoke(
         src_max_len=100,
         tgt_max_len=100,
     )
-    model = Transformer(config)
+    data_config = DataConfig(
+        "dataset_name", "subset", "en", "de", 
+        TokenizationStrategy(tokenization_strategy)
+    )
+    model = Transformer(model_config, data_config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
     tgt_ids = torch.randint(0, tgt_vocab_size, (batch_size, tgt_seq_len))
 

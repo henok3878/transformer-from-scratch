@@ -4,46 +4,53 @@ from transformer.components.encoder import Encoder
 from transformer.components.decoder import Decoder
 from transformer.components.input_embedding import InputEmbedding
 from transformer.components.positional_encoding import PositionalEncoding
-from config import ModelConfig
-
+from config import DataConfig, ModelConfig, TokenizationStrategy
 
 class Transformer(nn.Module):
-    def __init__(self, config: ModelConfig):
+    def __init__(self, model_config: ModelConfig, data_config: DataConfig):
         super().__init__()
+
+        is_joint_vocab = data_config.tokenization_strategy == TokenizationStrategy.JOINT
+         
         self.src_embedding = nn.Sequential(
-            InputEmbedding(config.src_vocab_size, config.d_model),
+            InputEmbedding(model_config.src_vocab_size, model_config.d_model),
             PositionalEncoding(
-                d_model=config.d_model,
-                seq_len=config.src_max_len,
-                dropout=config.dropout,
+                d_model=model_config.d_model,
+                seq_len=model_config.src_max_len,
+                dropout=model_config.dropout,
             ),
         )
-        self.tgt_embedding = nn.Sequential(
-            InputEmbedding(config.tgt_vocab_size, config.d_model),
-            PositionalEncoding(
-                d_model=config.d_model,
-                seq_len=config.tgt_max_len,
-                dropout=config.dropout,
-            ),
-        )
+        if is_joint_vocab:
+            self.tgt_embedding = self.src_embedding
+        else:
+            self.tgt_embedding = nn.Sequential(
+                InputEmbedding(model_config.tgt_vocab_size, model_config.d_model),
+                PositionalEncoding(
+                    d_model=model_config.d_model,
+                    seq_len=model_config.tgt_max_len,
+                    dropout=model_config.dropout,
+                ),
+            )
 
         self.encoder = Encoder(
-            num_layers=config.num_encoder_layers,
-            d_model=config.d_model,
-            d_ff=config.d_ff,
-            num_heads=config.num_heads,
-            dropout=config.dropout,
+            num_layers=model_config.num_encoder_layers,
+            d_model=model_config.d_model,
+            d_ff=model_config.d_ff,
+            num_heads=model_config.num_heads,
+            dropout=model_config.dropout,
         )
 
         self.decoder = Decoder(
-            num_layers=config.num_decoder_layers,
-            d_model=config.d_model,
-            d_ff=config.d_ff,
-            num_heads=config.num_heads,
-            dropout=config.dropout,
+            num_layers=model_config.num_decoder_layers,
+            d_model=model_config.d_model,
+            d_ff=model_config.d_ff,
+            num_heads=model_config.num_heads,
+            dropout=model_config.dropout,
         )
 
-        self.output_proj = nn.Linear(config.d_model, config.tgt_vocab_size)
+        self.output_proj = nn.Linear(model_config.d_model, model_config.tgt_vocab_size)
+
+        self.output_proj.weight = self.tgt_embedding[0].embedding.weight # type: ignore  
 
     def forward(
         self,
