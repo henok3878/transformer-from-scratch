@@ -1,5 +1,4 @@
 model:
-  vocab_size: 50000 # shared vocabulary size incase of joint tokenization 
   src_vocab_size: 32000
   tgt_vocab_size: 32000
   d_model: 512

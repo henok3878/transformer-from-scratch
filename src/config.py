@@ -7,7 +7,6 @@ class TokenizationStrategy(Enum):
     SEPARATE = "separate"
 @dataclass
 class ModelConfig:
-    vocab_size: int
     src_vocab_size: int
     tgt_vocab_size: int
     d_model: int

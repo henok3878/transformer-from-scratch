@@ -30,7 +30,6 @@ def test_transformer_shape_and_dtype_separate(
     tokenization_strategy,
 ):
     model_config = ModelConfig(
-        vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
         d_model=d_model,
@@ -75,7 +74,6 @@ def test_transformer_mask_optional_and_broadcasting(
     tokenization_strategy="joint"
 ):
     model_config = ModelConfig(
-        vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
         d_model=d_model,
@@ -122,7 +120,6 @@ def test_transformer_backprop_smoke(
     tokenization_strategy="separate"
 ):
     model_config = ModelConfig(
-        vocab_size=src_vocab_size,
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
         d_model=d_model,
