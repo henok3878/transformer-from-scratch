@@ -33,7 +33,7 @@ htmlcov/
 
 # data, tokenizers & experiments
 data/
-tokenziers/
+tokenizers/ 
 experiments/            
 
 # ignore wandb 
