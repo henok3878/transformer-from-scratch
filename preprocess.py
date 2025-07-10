@@ -1,12 +1,12 @@
 import os 
 import argparse 
-import json
 from typing import Iterator
 from datasets import load_dataset, Dataset, IterableDataset, IterableDatasetDict 
 from tokenizers import Tokenizer, AddedToken
 from tokenizers.models import BPE 
 from tokenizers.trainers import BpeTrainer 
 from tokenizers.pre_tokenizers import ByteLevel
+from tokenizers.processors import TemplateProcessing
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 
 from src.config import TokenizationStrategy, load_config 
@@ -41,6 +41,16 @@ def build_byte_level_bpe_tokenizer(texts: Iterator, vocab_size: int):
         vocab_size=vocab_size, special_tokens=special_tokens,min_frequency=2, ) # type: ignore  
 
     tokenizer.train_from_iterator(texts, trainer) 
+
+    post_processor = TemplateProcessing(
+        single="[SOS] $A [EOS]",
+        pair="[SOS] $A [EOS]",
+        special_tokens=[
+            ("[SOS]", tokenizer.token_to_id("[SOS]")),
+            ("[EOS]", tokenizer.token_to_id("[EOS]")),
+        ])
+    tokenizer.post_processor = post_processor # type: ignore 
+
     return tokenizer
 
 def main():
