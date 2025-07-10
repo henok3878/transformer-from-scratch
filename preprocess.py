@@ -140,4 +140,5 @@ def main():
 
     print("Preprocessing complete!") 
 
-
+if __name__ == '__main__':
+    main() 
