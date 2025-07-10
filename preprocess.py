@@ -44,7 +44,7 @@ def build_byte_level_bpe_tokenizer(texts: Iterator, vocab_size: int):
 
     post_processor = TemplateProcessing(
         single="[SOS] $A [EOS]",
-        pair="[SOS] $A [EOS]",
+        pair="[SOS] $A [EOS] [SOS] $B [EOS]",
         special_tokens=[
             ("[SOS]", tokenizer.token_to_id("[SOS]")),
             ("[EOS]", tokenizer.token_to_id("[EOS]")),
