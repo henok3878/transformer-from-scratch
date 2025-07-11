@@ -16,6 +16,14 @@ training:
   lr: 1.0e-4
   num_workers: 8
 
+experiment:
+  base_dir: "experiments"
+  checkpoint_dir: "checkpoints"
+  save_every_epoch: 1
+  keep_last_n: 3
+  log_every: 100 # log every N batches
+  log_dir: "logs"
+
 data:
   dataset_name: "wmt19"
   subset: "de-en"
