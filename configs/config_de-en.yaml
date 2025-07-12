@@ -11,7 +11,7 @@ model:
   tgt_max_len: 512
 
 training:
-  batch_size: 128
+  batch_size: 32
   epochs: 20
   lr: 1.0e-4
   num_workers: 8
