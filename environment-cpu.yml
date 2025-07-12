@@ -1,6 +1,5 @@
 name: transformer-cpu
 channels:
-  - defaults
   - conda-forge
   - pytorch
 
