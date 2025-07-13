@@ -1,10 +1,12 @@
 from functools import partial
 import os 
 import shutil
+import wandb 
 from typing import cast
 import torch 
 import argparse 
 import torch.nn as nn 
+from dataclasses import asdict 
 from datetime import datetime 
 from torch.utils.data import DataLoader, DistributedSampler 
 from torch.nn.parallel import DistributedDataParallel as DDP 
@@ -44,9 +46,9 @@ def create_masks(src_batch: torch.Tensor, tgt_batch: torch.Tensor, padding_idx: 
     tgt_mask = tgt_padding_mask & tgt_lower_matrix 
     return src_mask, tgt_mask 
 
-def prepare_batch(batch: list[dict[str, list[int]]], padding_idx: int) -> dict[str, torch.Tensor]:
-    src_ids = [torch.tensor(item['src_ids'], dtype=torch.long) for item in batch]
-    tgt_ids = [torch.tensor(item['tgt_ids'], dtype=torch.long) for item in batch]
+def prepare_batch(batch: list[dict[str, list[int]]], padding_idx: int, src_max_len: int, tgt_max_len: int) -> dict[str, torch.Tensor]:
+    src_ids = [torch.tensor(item['src_ids'][:src_max_len], dtype=torch.long) for item in batch]
+    tgt_ids = [torch.tensor(item['tgt_ids'][:tgt_max_len], dtype=torch.long) for item in batch]
 
     src_padded = torch.nn.utils.rnn.pad_sequence(
         src_ids, batch_first=True, padding_value=padding_idx) 
@@ -80,6 +82,14 @@ class Trainer:
         # create experiment directories
         self.checkpoint_dir = os.path.join(run_path, config.experiment.checkpoint_dir)
         self.log_dir = os.path.join(run_path, config.experiment.log_dir)
+
+        wandb.init(
+            project="transformer-from-scratch",
+            name=os.path.basename(run_path),
+            config=asdict(config),
+            dir=self.log_dir,
+            resume="allow"
+        )
         
         self._load_tokenizers_and_datasets() 
         
@@ -132,7 +142,9 @@ class Trainer:
         self.padding_idx = self.tokenizer_src.token_to_id("[PAD]")
     
     def _prepare_dataloader(self, dataset, is_train=True):
-        collate = partial(prepare_batch, padding_idx=self.padding_idx)
+        collate = partial(prepare_batch, padding_idx=self.padding_idx,
+                          src_max_len=self.config.model.src_max_len,
+                          tgt_max_len=self.config.model.tgt_max_len)
         return DataLoader(
             dataset, 
             batch_size=self.config.training.batch_size, 
@@ -180,9 +192,12 @@ class Trainer:
         
         # clean up old checkpoints
         self._cleanup_old_checkpoints()
+
+        # log checkpoints as wandb artifact 
+        artifact = wandb.Artifact("checkpoint", type="model")
+        artifact.add_file(ckp_path)
+        wandb.log_artifact(artifact)
         
-        print(f"Checkpoint saved to {ckp_path}")
-    
     def _cleanup_old_checkpoints(self):
         """Keep only the last N checkpoints."""
         if self.global_rank != 0:
@@ -239,6 +254,7 @@ class Trainer:
             loss = self._run_batch(batch)
             
             if self.global_rank == 0 and i % self.config.experiment.log_every == 0:
+                wandb.log({"train/loss": loss, "epoch": epoch, "batch": i})
                 print(f"Epoch {epoch} | Batch {i}/{len(self.train_loader)} | Loss: {loss:.4f}")
 
     def train(self):
@@ -281,6 +297,7 @@ def main():
         trainer = Trainer(config, run_path)
         trainer.train()
     finally:
+        wandb.finish()
         ddp_cleanup()
 
 if __name__ == "__main__":
