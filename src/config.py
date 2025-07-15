@@ -24,6 +24,8 @@ class TrainingConfig:
     epochs: int
     lr: float
     num_workers: int
+    quick_eval_every: int 
+    full_eval_every: int
 
 @dataclass 
 class ExperimentConfig:
