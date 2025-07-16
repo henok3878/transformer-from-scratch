@@ -359,7 +359,7 @@ class Trainer:
 
 def main():
     parser = argparse.ArgumentParser(description="Transformer Training Script")
-    parser.add_argument("--config", type=str, deafult="./configs/config_de-en.yaml", help="Path to config file")
+    parser.add_argument("--config", type=str, default="./configs/config_de-en.yaml", help="Path to config file")
     args = parser.parse_args()
     config = load_config(args.config)
 
