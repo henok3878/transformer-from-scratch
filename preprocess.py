@@ -55,7 +55,7 @@ def build_byte_level_bpe_tokenizer(texts: Iterator, vocab_size: int):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config",type=str, required=True, help="Path to config file")
+    parser.add_argument("--config",type=str,default="./configs/config_de-en.yaml", help="Path to config file")
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -127,26 +127,30 @@ def main():
             return {"src_ids": [e.ids for e in src_encodings], "tgt_ids": [e.ids for e in tgt_encodings]}
     else:
         raise ValueError(f"Expected joint or separate tokenization strategy but provided{strategy}")
-
-    # apply tokenization and save 
-    if os.path.exists(processed_dir):
-        print(f"Processed data already exists. Skipping tokenization...")
-    else:
-        print("Loading dataset for tokenization...")
-        raw_ds_full = load_dataset(config.data.dataset_name, config.data.subset, split='train')
-        assert isinstance(raw_ds_full, Dataset)
         
-        print("Tokenizing dataset...")
-        tokenized_ds = raw_ds_full.map(
+    os.makedirs(processed_dir, exist_ok=True)
+    # apply tokenization and save 
+    for split in ["train", "validation"]:
+        out_dir = os.path.join(processed_dir, split) 
+        if os.path.exists(out_dir):
+            print(f"Processed {split} already exists at {out_dir}, so skipping")
+            continue 
+
+        print(f"Loading {split} dataset for tokenization...")
+        raw_split = load_dataset(config.data.dataset_name, config.data.subset, split=split)
+        assert isinstance(raw_split, Dataset)
+        
+        print(f"Tokenizing {split} dataset...")
+        tokenized_ds = raw_split.map(
             tokenize_fn,
             batched=True,
             batch_size=1000,
             num_proc=os.cpu_count(),
-            remove_columns=raw_ds_full.column_names
+            remove_columns=raw_split.column_names
         )
         
-        print(f"Saving tokenized dataset to {processed_dir}...")
-        tokenized_ds.save_to_disk(processed_dir)
+        print(f"Saving tokenized {split} dataset to {out_dir}...")
+        tokenized_ds.save_to_disk(out_dir)
 
     print("Preprocessing complete!") 
 
