@@ -11,17 +11,25 @@ model:
   tgt_max_len: 128
 
 training:
+  seed: 42
   batch_size: 32
   epochs: 20
-  lr: 1.0e-4
+  initial_lr: 1.0e-7
+  peak_lr: 1.0e-4
   num_workers: 8
-  quick_eval_every: 1000 
-  full_eval_every: 10000
+  quick_val_size: 50000 # ~50K tokens for quick eval
+  quick_eval_every: 1000 # steps
+  full_eval_every: 10000 # steps
+  warmup_steps: 10000
+  weight_decay: 0.01
+  adam_eps: 1e-8
+  label_smoothing: 0.1
+  max_grad_norm: 1.0
 
 experiment:
   base_dir: "experiments"
   checkpoint_dir: "checkpoints"
-  save_every_epoch: 1
+  save_every_steps: 10000 # steps
   keep_last_n: 3
   log_every: 100 # log every N batches
   log_dir: "logs"
@@ -32,3 +40,4 @@ data:
   lang_src: "en"
   lang_tgt: "de"
   tokenization_strategy: "joint" # "joint" or "separate"
+  validation_fraction: 0.05

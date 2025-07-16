@@ -20,18 +20,26 @@ class ModelConfig:
 
 @dataclass
 class TrainingConfig:
+    seed: int 
     batch_size: int
     epochs: int
-    lr: float
+    initial_lr: float
+    peak_lr: float
     num_workers: int
+    quick_val_size: int
     quick_eval_every: int 
     full_eval_every: int
+    warmup_steps: int 
+    weight_decay: float 
+    adam_eps: float
+    label_smoothing: float 
+    max_grad_norm: float 
 
 @dataclass 
 class ExperimentConfig:
     base_dir: str = "experiments" 
     checkpoint_dir: str = "checkpoints" 
-    save_every_epoch: int = 1 
+    save_every_steps: int = 1 
     keep_last_n: int = 3 
     log_every: int = 100 
     log_dir: str = "logs"
@@ -43,6 +51,7 @@ class DataConfig:
     lang_src: str
     lang_tgt: str
     tokenization_strategy: TokenizationStrategy
+    validation_fraction: float
 
 @dataclass
 class AppConfig:
