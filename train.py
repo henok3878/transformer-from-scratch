@@ -6,6 +6,7 @@ from sentry_sdk import is_initialized
 import wandb 
 from typing import cast
 import torch 
+from torch import autocast, GradScaler
 import argparse 
 import torch.nn as nn 
 from dataclasses import asdict 
@@ -114,7 +115,7 @@ class Trainer:
         )
         self.scheduler = LambdaLR(self.optimizer, lr_lambda=self._lr_lambda)
 
-        self.scaler = torch.GradScaler() 
+        self.scaler = GradScaler() 
 
         self.loss_fn = nn.CrossEntropyLoss(label_smoothing=config.training.label_smoothing, ignore_index=self.padding_idx) 
 
@@ -255,7 +256,7 @@ class Trainer:
         total_tokens = torch.tensor(0.0, device=self.device)
         for batch in loader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            with torch.autocast(device_type="cuda"):
+            with autocast(device_type="cuda"):
                 logits = self.model(
                     src_ids=batch["src_ids"],
                     tgt_ids=batch["tgt_ids"],
@@ -292,7 +293,7 @@ class Trainer:
         for key, value in batch.items():
             batch[key] = value.to(self.device)
         
-        with torch.autocast(device_type="cuda"): 
+        with autocast(device_type="cuda"): 
             logits = self.model(
                 src_ids=batch["src_ids"],
                 tgt_ids=batch["tgt_ids"],
