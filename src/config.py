@@ -1,12 +1,10 @@
 import yaml
 from enum import Enum 
-from dataclasses import dataclass 
-
+from pydantic import BaseModel 
 class TokenizationStrategy(Enum):
     JOINT = 'joint' 
     SEPARATE = "separate"
-@dataclass
-class ModelConfig:
+class ModelConfig(BaseModel):
     src_vocab_size: int
     tgt_vocab_size: int
     d_model: int
@@ -18,8 +16,7 @@ class ModelConfig:
     src_max_len: int
     tgt_max_len: int
 
-@dataclass
-class TrainingConfig:
+class TrainingConfig(BaseModel):
     seed: int 
     batch_size: int
     epochs: int
@@ -35,8 +32,7 @@ class TrainingConfig:
     label_smoothing: float 
     max_grad_norm: float 
 
-@dataclass 
-class ExperimentConfig:
+class ExperimentConfig(BaseModel):
     base_dir: str = "experiments" 
     checkpoint_dir: str = "checkpoints" 
     save_every_steps: int = 1 
@@ -44,8 +40,7 @@ class ExperimentConfig:
     log_every: int = 100 
     log_dir: str = "logs"
 
-@dataclass
-class DataConfig:
+class DataConfig(BaseModel):
     dataset_name: str
     subset: str
     lang_src: str
@@ -53,8 +48,7 @@ class DataConfig:
     tokenization_strategy: TokenizationStrategy
     validation_fraction: float
 
-@dataclass
-class AppConfig:
+class AppConfig(BaseModel):
     model: ModelConfig
     training: TrainingConfig
     experiment: ExperimentConfig
@@ -65,12 +59,4 @@ def load_config(path: str) -> AppConfig:
     with open(path, 'r') as f:
         yaml_data = yaml.safe_load(f)
     
-    # create config objects from the dictionary
-    model_cfg = ModelConfig(**yaml_data['model'])
-    training_cfg = TrainingConfig(**yaml_data['training'])
-    experiment_cfg = ExperimentConfig(**yaml_data['experiment']) 
-    data_dict = yaml_data['data'] 
-    data_dict['tokenization_strategy'] = TokenizationStrategy(data_dict['tokenization_strategy']) 
-    data_cfg = DataConfig(**data_dict)
-
-    return AppConfig(model=model_cfg, training=training_cfg,experiment=experiment_cfg, data=data_cfg)
+    return AppConfig(**yaml_data) 

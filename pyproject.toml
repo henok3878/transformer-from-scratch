@@ -24,6 +24,7 @@ dependencies = [
   "datasets",
   "pyyaml", 
   "tokenizers",
+  "pydantic",
 ]
 
 [project.urls]

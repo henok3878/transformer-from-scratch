@@ -2,14 +2,12 @@ from functools import partial
 import math
 import os 
 import shutil
-from sentry_sdk import is_initialized
 import wandb 
 from typing import cast
 import torch 
 from torch import autocast, GradScaler
 import argparse 
 import torch.nn as nn 
-from dataclasses import asdict 
 from datetime import datetime 
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, DistributedSampler 
@@ -93,7 +91,7 @@ class Trainer:
             wandb.init(
                 project="transformer-from-scratch",
                 name=os.path.basename(run_path),
-                config=asdict(config),
+                config=config.model_dump(),
                 dir=self.log_dir,
                 resume="allow"
             )
