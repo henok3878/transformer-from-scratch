@@ -271,9 +271,9 @@ class Trainer:
                     tgt_mask=batch["tgt_mask"],
                 )
                 loss = self.loss_fn(logits.reshape(-1, logits.size(-1)), batch["label"].reshape(-1))
-            total_loss += loss * batch["label"].numel()
-            total_tokens += batch["label"].numel()
-
+            valid_tokens = (batch["label"] != self.padding_idx).sum() 
+            total_loss += loss * valid_tokens 
+            total_tokens += valid_tokens 
         # aggregate across processes
         dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)
         dist.all_reduce(total_tokens, op=dist.ReduceOp.SUM)
