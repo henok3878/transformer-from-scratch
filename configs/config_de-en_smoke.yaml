@@ -14,7 +14,7 @@ training:
   seed: 42
   batch_size: 32
   epochs: 2
-  base_lr: 3.0e-2
+  lr_factor: 1
   num_workers: 0
   quick_val_size: 100 # ~100 tokens for quick eval
   quick_eval_every: 10 # steps

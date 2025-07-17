@@ -110,7 +110,7 @@ class Trainer:
         self.model = DDP(model, device_ids=[self.local_rank])
         
         self.optimizer = torch.optim.AdamW(
-            self.model.parameters(), lr=self.config.training.base_lr, weight_decay=config.training.weight_decay, eps=config.training.adam_eps, 
+            self.model.parameters(), lr=self.config.training.lr_factor, weight_decay=config.training.weight_decay, eps=config.training.adam_eps, 
             fused=True 
         )
         self.scheduler = LambdaLR(self.optimizer, lr_lambda=self._noam_lambda)
@@ -132,10 +132,10 @@ class Trainer:
         self._load_checkpoint()
 
     def _noam_lambda(self, step: int):
-        step += 1
-        warmup = self.config.training.warmup_steps
-        d_model = self.config.model.d_model 
-        return d_model ** -0.5 * min(step ** -0.5, step * warmup ** -1.5)
+        step += 1  
+        d_model = self.config.model.d_model
+        warmup_steps = self.config.training.warmup_steps
+        return (d_model ** -0.5) * min(step ** -0.5, step * warmup_steps ** -1.5)                    
 
     def _load_tokenizers_and_datasets(self):
         if self.global_rank == 0:
