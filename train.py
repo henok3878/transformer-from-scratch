@@ -122,7 +122,10 @@ class Trainer:
         self.quick_val_loader = self._prepare_dataloader(self.quick_val_dataset, shuffle=False)
         
         self.global_step = 0 
-        self.epochs_run = 0 
+        self.current_epoch = 0 
+        # the index of the epoch to start when (re)enter training 
+        self.epochs_run = 0  
+        self.best_step_ppl = float('inf')
         self._load_checkpoint()
 
     def _lr_lambda(self, step: int):
@@ -195,34 +198,39 @@ class Trainer:
         self.scaler.load_state_dict(checkpoint["scaler_state_dict"])
         self.global_step = checkpoint["global_step"]
         self.epochs_run = checkpoint["epoch"] + 1
+        self.best_step_ppl = checkpoint.get('best_step_ppl', float('inf'))
+        self.current_epoch = self.epochs_run 
         if self.global_rank == 0:
             print(f"Resumed training from epoch {self.epochs_run}")
     
-    def _save_checkpoint(self, epoch: int):
+    def _save_checkpoint(self, value: int, is_epoch: bool):
         """Save checkpoint with cleanup of old checkpoints."""
         if self.global_rank != 0:
             return
-            
+
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         
+        prefix = "epoch" if is_epoch else "step"
         # save current checkpoint
-        ckp_path = os.path.join(self.checkpoint_dir, f"checkpoint_epoch_{epoch}.pt")
+        ckp_path = os.path.join(self.checkpoint_dir, f"checkpoint_{prefix}_{value}.pt")
         latest_path = os.path.join(self.checkpoint_dir, "latest_checkpoint.pt")
         
         checkpoint = {
-            'epoch': epoch,
+            'epoch': self.current_epoch,
             'global_step': self.global_step,
             'model_state_dict': self.model.module.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             "scheduler_state_dict": self.scheduler.state_dict(),
             "scaler_state_dict": self.scaler.state_dict(),
+            "best_step_ppl": self.best_step_ppl
         }
         
         torch.save(checkpoint, ckp_path)
         torch.save(checkpoint, latest_path)
         
-        # clean up old checkpoints
-        self._cleanup_old_checkpoints()
+        if not is_epoch:
+            # clean up old checkpoints
+            self._cleanup_old_checkpoints()
 
         # log checkpoints as wandb artifact 
         artifact = wandb.Artifact("checkpoint", type="model")
@@ -230,17 +238,17 @@ class Trainer:
         wandb.log_artifact(artifact)
         
     def _cleanup_old_checkpoints(self):
-        """Keep only the last N checkpoints."""
+        """Keep only the last N best step checkpoints.""" 
         if self.global_rank != 0:
             return
             
         checkpoint_files = []
         for file in os.listdir(self.checkpoint_dir):
-            if file.startswith("checkpoint_epoch_") and file.endswith(".pt"):
+            if file.startswith("checkpoint_step_") and file.endswith(".pt"):
                 epoch_num = int(file.split("_")[2].split(".")[0])
                 checkpoint_files.append((epoch_num, file))
         
-        # sort by epoch and keep only the last N
+        # sort by step and keep only the last N
         checkpoint_files.sort(key=lambda x: x[0])
         if len(checkpoint_files) > self.config.experiment.keep_last_n:
             files_to_remove = checkpoint_files[:-self.config.experiment.keep_last_n]
@@ -278,6 +286,7 @@ class Trainer:
         if self.global_rank == 0:
             wandb.log({"val/full_loss": avg_loss, "val/full_ppl": ppl, "step": self.global_step})
             print(f"[FULL VAL] step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")    
+        return avg_loss, ppl 
         
 
     def _run_quick_validation(self): 
@@ -285,6 +294,7 @@ class Trainer:
         if self.global_rank == 0:
             wandb.log({"val/quick_loss": avg_loss, "val/quick_ppl": ppl, "step": self.global_step})
             print(f"[QUICK VAL] step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
+        return avg_loss, ppl 
 
     def _run_batch(self, batch: dict[str, torch.Tensor]) -> float:
         """Runs a single training step."""
@@ -330,7 +340,10 @@ class Trainer:
 
             # checkpoint
             if self.global_step % self.config.experiment.save_every_steps == 0:
-                self._save_checkpoint(self.global_step)
+                _, quick_ppl = self._eval_loader(self.quick_val_loader)
+                if quick_ppl <= self.best_step_ppl:
+                    self.best_step_ppl = quick_ppl 
+                    self._save_checkpoint(self.global_step, is_epoch=False)
 
         return loss.item()
 
@@ -340,16 +353,17 @@ class Trainer:
         sampler.set_epoch(epoch)
         
         self.model.train()
-        for i, batch in enumerate(self.train_loader):
+        for batch in self.train_loader:
             loss = self._run_batch(batch)
 
     def train(self):
         """Main training loop."""
         for epoch in range(self.epochs_run, self.config.training.epochs):
+            self.current_epoch = epoch 
             self._run_epoch(epoch)
             if self.global_rank == 0:
-                self._run_full_validation()
-                self._save_checkpoint(epoch)
+                _, full_ppl = self._run_full_validation()
+                self._save_checkpoint(epoch, is_epoch=True)
 
 def main():
     parser = argparse.ArgumentParser(description="Transformer Training Script")
