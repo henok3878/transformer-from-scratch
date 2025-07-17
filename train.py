@@ -259,6 +259,7 @@ class Trainer:
     
     @torch.inference_mode()
     def _eval_loader(self, loader: DataLoader): 
+        self.model.eval() 
         total_loss = torch.tensor(0.0, device=self.device)
         total_tokens = torch.tensor(0.0, device=self.device)
         for batch in loader:
@@ -280,6 +281,8 @@ class Trainer:
 
         avg_loss = (total_loss / total_tokens).item()
         ppl = math.exp(avg_loss)
+
+        self.model.train() 
         return avg_loss, ppl
     
     def _run_full_validation(self):
