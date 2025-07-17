@@ -316,7 +316,8 @@ class Trainer:
                 src_ids=batch["src_ids"],
                 tgt_ids=batch["tgt_ids"],
                 src_mask=batch["src_mask"],
-                tgt_mask=batch["tgt_mask"]
+                tgt_mask=batch["tgt_mask"], 
+                kv_mask=batch["src_mask"]
             )
 
             loss = self.loss_fn(
