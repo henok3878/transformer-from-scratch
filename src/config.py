@@ -20,8 +20,7 @@ class TrainingConfig(BaseModel):
     seed: int 
     batch_size: int
     epochs: int
-    initial_lr: float
-    peak_lr: float
+    base_lr: float
     num_workers: int
     quick_val_size: int
     quick_eval_every: int 

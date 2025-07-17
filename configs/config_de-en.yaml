@@ -14,8 +14,7 @@ training:
   seed: 42
   batch_size: 32
   epochs: 12
-  initial_lr: 1.0e-7
-  peak_lr: 3.0e-4
+  base_lr: 3.0e-4
   num_workers: 8
   quick_val_size: 50000 # ~50K tokens for quick eval
   quick_eval_every: 1000 # steps
