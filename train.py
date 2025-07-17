@@ -126,6 +126,7 @@ class Trainer:
         # the index of the epoch to start when (re)enter training 
         self.epochs_run = 0  
         self.best_step_ppl = float('inf')
+        self.last_quick_ppl = float('inf')
         self._load_checkpoint()
 
     def _lr_lambda(self, step: int):
@@ -291,6 +292,7 @@ class Trainer:
 
     def _run_quick_validation(self): 
         avg_loss, ppl = self._eval_loader(loader=self.quick_val_loader) 
+        self.last_quick_ppl = ppl 
         if self.global_rank == 0:
             wandb.log({"val/quick_loss": avg_loss, "val/quick_ppl": ppl, "step": self.global_step})
             print(f"[QUICK VAL] step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
@@ -340,9 +342,8 @@ class Trainer:
 
             # checkpoint
             if self.global_step % self.config.experiment.save_every_steps == 0:
-                _, quick_ppl = self._eval_loader(self.quick_val_loader)
-                if quick_ppl <= self.best_step_ppl:
-                    self.best_step_ppl = quick_ppl 
+                if self.last_quick_ppl <= self.best_step_ppl:
+                    self.best_step_ppl = self.last_quick_ppl  
                     self._save_checkpoint(self.global_step, is_epoch=False)
 
         return loss.item()
