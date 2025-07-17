@@ -288,6 +288,8 @@ class Trainer:
 
     def _run_batch(self, batch: dict[str, torch.Tensor]) -> float:
         """Runs a single training step."""
+        self.global_step += 1
+
         for key, value in batch.items():
             batch[key] = value.to(self.device)
         
@@ -316,8 +318,6 @@ class Trainer:
         self.scheduler.step() 
 
         if self.global_rank == 0:
-            self.global_step += 1
-
             # logging
             if self.global_step % self.config.experiment.log_every == 0:
                 wandb.log({"train/loss": loss.item(), "step": self.global_step})
