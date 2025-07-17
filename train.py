@@ -113,7 +113,7 @@ class Trainer:
             self.model.parameters(), lr=self.config.training.peak_lr, weight_decay=config.training.weight_decay, eps=config.training.adam_eps, 
             fused=True 
         )
-        self.scheduler = LambdaLR(self.optimizer, lr_lambda=self._lr_lambda)
+        self.scheduler = LambdaLR(self.optimizer, lr_lambda=self._noam_lambda)
 
         self.scaler = GradScaler() 
 
@@ -131,11 +131,11 @@ class Trainer:
         self.last_quick_ppl = float('inf')
         self._load_checkpoint()
 
-    def _lr_lambda(self, step: int):
+    def _noam_lambda(self, step: int):
+        step += 1
         warmup = self.config.training.warmup_steps
-        if step < warmup:
-            return step / warmup 
-        return (step / warmup) ** -0.5 
+        d_model = self.config.model.d_model 
+        return d_model ** -0.5 * min(step ** -0.5, step * warmup ** -1.5)
 
     def _load_tokenizers_and_datasets(self):
         if self.global_rank == 0:
