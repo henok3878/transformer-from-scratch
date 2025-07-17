@@ -50,14 +50,16 @@ def create_masks(src_batch: torch.Tensor, tgt_batch: torch.Tensor, padding_idx: 
     return src_mask, tgt_mask 
 
 def prepare_batch(batch: list[dict[str, list[int]]], padding_idx: int, src_max_len: int, tgt_max_len: int) -> dict[str, torch.Tensor]:
-    src_ids = [torch.tensor(item['src_ids'][:src_max_len], dtype=torch.long) for item in batch]
-    tgt_ids = [torch.tensor(item['tgt_ids'][:tgt_max_len], dtype=torch.long) for item in batch]
+    B = len(batch) 
+    src_padded = torch.full((B, src_max_len), padding_idx, dtype=torch.long)
+    tgt_padded = torch.full((B, tgt_max_len), padding_idx, dtype=torch.long)
+    for i, item in enumerate(batch):
+        src_seq = torch.tensor(item['src_ids'][:src_max_len], dtype=torch.long)
+        tgt_seq = torch.tensor(item['tgt_ids'][:tgt_max_len], dtype=torch.long)
 
-    src_padded = torch.nn.utils.rnn.pad_sequence(
-        src_ids, batch_first=True, padding_value=padding_idx) 
-    tgt_padded = torch.nn.utils.rnn.pad_sequence(
-        tgt_ids,batch_first=True, padding_value=padding_idx)
-    
+        src_padded[i, :src_seq.size(0)] = src_seq
+        tgt_padded[i, :tgt_seq.size(0)] = tgt_seq
+
     # the input without of the last token 
     decoder_input = tgt_padded[:, :-1] 
     # input shifted to the right by one 
