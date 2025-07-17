@@ -1,26 +1,26 @@
 model:
   src_vocab_size: 32000
   tgt_vocab_size: 32000
-  d_model: 512
-  num_heads: 8
-  d_ff: 2048
+  d_model: 1024
+  num_heads: 16
+  d_ff: 4096
   num_encoder_layers: 8
   num_decoder_layers: 8
-  dropout: 0.1
+  dropout: 0.3
   src_max_len: 128
   tgt_max_len: 128
 
 training:
   seed: 42
   batch_size: 32
-  epochs: 20
+  epochs: 12
   initial_lr: 1.0e-7
-  peak_lr: 1.0e-4
+  peak_lr: 3.0e-4
   num_workers: 8
   quick_val_size: 50000 # ~50K tokens for quick eval
   quick_eval_every: 1000 # steps
   full_eval_every: 10000 # steps
-  warmup_steps: 10000
+  warmup_steps: 15000
   weight_decay: 0.01
   adam_eps: 1e-8
   label_smoothing: 0.1
