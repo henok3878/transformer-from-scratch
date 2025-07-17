@@ -342,10 +342,6 @@ class Trainer:
         self.model.train()
         for i, batch in enumerate(self.train_loader):
             loss = self._run_batch(batch)
-            
-            if self.global_rank == 0 and i % self.config.experiment.log_every == 0:
-                wandb.log({"train/loss": loss, "epoch": epoch, "batch": i})
-                print(f"Epoch {epoch} | Batch {i}/{len(self.train_loader)} | Loss: {loss:.4f}")
 
     def train(self):
         """Main training loop."""
