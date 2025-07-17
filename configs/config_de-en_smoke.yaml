@@ -1,0 +1,43 @@
+model:
+  src_vocab_size: 32000
+  tgt_vocab_size: 32000
+  d_model: 32
+  num_heads: 2
+  d_ff: 64
+  num_encoder_layers: 2
+  num_decoder_layers: 2
+  dropout: 0.1
+  src_max_len: 16
+  tgt_max_len: 16
+
+training:
+  seed: 42
+  batch_size: 32
+  epochs: 2
+  initial_lr: 1.0e-3
+  peak_lr: 3.0e-2
+  num_workers: 0
+  quick_val_size: 100 # ~100 tokens for quick eval
+  quick_eval_every: 10 # steps
+  full_eval_every: 20 # steps
+  warmup_steps: 15000
+  weight_decay: 0.01
+  adam_eps: 1e-8
+  label_smoothing: 0.0
+  max_grad_norm: 1.0
+
+experiment:
+  base_dir: "experiments"
+  checkpoint_dir: "checkpoints"
+  save_every_steps: 10 # steps
+  keep_last_n: 1
+  log_every: 1 # log every N steps
+  log_dir: "logs"
+
+data:
+  dataset_name: "wmt19"
+  subset: "de-en"
+  lang_src: "en"
+  lang_tgt: "de"
+  tokenization_strategy: "joint" # "joint" or "separate"
+  validation_fraction: 0.1
