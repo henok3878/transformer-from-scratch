@@ -272,6 +272,7 @@ class Trainer:
                     tgt_ids=batch["tgt_ids"],
                     src_mask=batch["src_mask"],
                     tgt_mask=batch["tgt_mask"],
+                    kv_mask=batch["src_mask"]
                 )
                 loss = self.loss_fn(logits.reshape(-1, logits.size(-1)), batch["label"].reshape(-1))
             valid_tokens = (batch["label"] != self.padding_idx).sum() 
@@ -360,7 +361,7 @@ class Trainer:
         
         self.model.train()
         for batch in self.train_loader:
-            loss = self._run_batch(batch)
+            self._run_batch(batch)
 
     def train(self):
         """Main training loop."""
@@ -368,7 +369,7 @@ class Trainer:
             self.current_epoch = epoch 
             self._run_epoch(epoch)
             if self.global_rank == 0:
-                _, full_ppl = self._run_full_validation()
+                self._run_full_validation()
                 self._save_checkpoint(epoch, is_epoch=True)
 
 def main():
