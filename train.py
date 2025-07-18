@@ -5,7 +5,6 @@ import shutil
 import wandb 
 from typing import cast
 import torch 
-from torch import autocast, GradScaler
 import argparse 
 import torch.nn as nn 
 from datetime import datetime 
@@ -115,8 +114,6 @@ class Trainer:
         )
         self.scheduler = LambdaLR(self.optimizer, lr_lambda=self._noam_lambda)
 
-        self.scaler = GradScaler() 
-
         self.loss_fn = nn.CrossEntropyLoss(label_smoothing=config.training.label_smoothing, ignore_index=self.padding_idx) 
 
         self.train_loader = self._prepare_dataloader(self.train_dataset, shuffle=True) 
@@ -198,7 +195,6 @@ class Trainer:
         self.model.module.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.scheduler.load_state_dict(state_dict=checkpoint['scheduler_state_dict']) 
-        self.scaler.load_state_dict(checkpoint["scaler_state_dict"])
         self.global_step = checkpoint["global_step"]
         self.epochs_run = checkpoint["epoch"] + 1
         self.best_step_ppl = checkpoint.get('best_step_ppl', float('inf'))
@@ -224,7 +220,6 @@ class Trainer:
             'model_state_dict': self.model.module.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             "scheduler_state_dict": self.scheduler.state_dict(),
-            "scaler_state_dict": self.scaler.state_dict(),
             "best_step_ppl": self.best_step_ppl
         }
         
@@ -266,15 +261,15 @@ class Trainer:
         total_tokens = torch.tensor(0.0, device=self.device)
         for batch in loader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            with autocast(device_type="cuda"):
-                logits = self.model(
-                    src_ids=batch["src_ids"],
-                    tgt_ids=batch["tgt_ids"],
-                    src_mask=batch["src_mask"],
-                    tgt_mask=batch["tgt_mask"],
-                    kv_mask=batch["src_mask"]
-                )
-                loss = self.loss_fn(logits.reshape(-1, logits.size(-1)), batch["label"].reshape(-1))
+
+            logits = self.model(
+                src_ids=batch["src_ids"],
+                tgt_ids=batch["tgt_ids"],
+                src_mask=batch["src_mask"],
+                tgt_mask=batch["tgt_mask"],
+                kv_mask=batch["src_mask"]
+            )
+            loss = self.loss_fn(logits.reshape(-1, logits.size(-1)), batch["label"].reshape(-1))
             valid_tokens = (batch["label"] != self.padding_idx).sum() 
             total_loss += loss * valid_tokens 
             total_tokens += valid_tokens 
@@ -311,29 +306,26 @@ class Trainer:
         for key, value in batch.items():
             batch[key] = value.to(self.device)
         
-        with autocast(device_type="cuda"): 
-            logits = self.model(
-                src_ids=batch["src_ids"],
-                tgt_ids=batch["tgt_ids"],
-                src_mask=batch["src_mask"],
-                tgt_mask=batch["tgt_mask"], 
-                kv_mask=batch["src_mask"]
-            )
+        logits = self.model(
+            src_ids=batch["src_ids"],
+            tgt_ids=batch["tgt_ids"],
+            src_mask=batch["src_mask"],
+            tgt_mask=batch["tgt_mask"], 
+            kv_mask=batch["src_mask"]
+        )
 
-            loss = self.loss_fn(
-                logits.reshape(-1, logits.size(-1)), 
-                batch["label"].reshape(-1)
-            )
+        loss = self.loss_fn(
+            logits.reshape(-1, logits.size(-1)), 
+            batch["label"].reshape(-1)
+        )
             
         self.optimizer.zero_grad()
-        self.scaler.scale(loss).backward()
-        self.scaler.unscale_(optimizer=self.optimizer)
+        loss.backward()
         torch.nn.utils.clip_grad_norm_(
             self.model.parameters(), 
             self.config.training.max_grad_norm
         )
-        self.scaler.step(optimizer=self.optimizer)
-        self.scaler.update()
+        self.optimizer.step()
         self.scheduler.step() 
 
         if self.global_rank == 0:
