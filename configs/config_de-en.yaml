@@ -16,7 +16,7 @@ training:
   epochs: 12
   lr_factor: 1.0
   num_workers: 8
-  quick_val_size: 50000 # ~50K tokens for quick eval
+  quick_val_size: 1024 # 1024 examples for quick eval
   quick_eval_every: 1000 # steps
   full_eval_every: 10000 # steps
   warmup_steps: 15000
