@@ -50,7 +50,20 @@ class Transformer(nn.Module):
 
         self.output_proj = nn.Linear(model_config.d_model, model_config.tgt_vocab_size)
 
+        self._init_weights()
+
         self.output_proj.weight = self.tgt_embedding[0].embedding.weight # type: ignore  
+
+    
+    def _init_weights(self):
+        for module in self.modules():
+            if isinstance(module, (nn.Linear, nn.Embedding)):
+                nn.init.xavier_uniform_(module.weight)
+                if hasattr(module, "bias") and module.bias is not None:
+                    nn.init.zeros_(module.bias)
+            elif isinstance(module, nn.LayerNorm):
+                nn.init.ones_(module.weight)
+                nn.init.zeros_(module.bias)
 
     def forward(
         self,
