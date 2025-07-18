@@ -328,16 +328,17 @@ class Trainer:
         self.optimizer.step()
         self.scheduler.step() 
 
+        # quick & full eval
+        if self.global_step % self.config.training.quick_eval_every == 0:
+            self._run_quick_validation()
+        if self.global_step % self.config.training.full_eval_every == 0:
+            self._run_full_validation()
+
         if self.global_rank == 0:
             # logging
             if self.global_step % self.config.experiment.log_every == 0:
                 wandb.log({"train/loss": loss.item(), "step": self.global_step})
 
-            # quick & full eval
-            if self.global_step % self.config.training.quick_eval_every == 0:
-                self._run_quick_validation()
-            if self.global_step % self.config.training.full_eval_every == 0:
-                self._run_full_validation()
 
             # checkpoint
             if self.global_step % self.config.experiment.save_every_steps == 0:
