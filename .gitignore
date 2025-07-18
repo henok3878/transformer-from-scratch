@@ -38,3 +38,6 @@ experiments/
 
 # ignore wandb 
 wandb/
+
+# ignore env variables 
+.env
