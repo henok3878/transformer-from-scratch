@@ -41,3 +41,4 @@ wandb/
 
 # ignore env variables 
 .env
+hostfile 

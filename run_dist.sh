@@ -8,11 +8,20 @@ if [ -f .env ]; then
 fi
 
 HOSTNAME=$(hostname)
-if [ "$HOSTNAME" = "$MASTER_ADDR" ]; then
-  NODE_RANK=0
-else
-  NODE_RANK=1
+
+# check for hostfile
+if [[ ! -f hostfile ]]; then
+    echo "Error: hostfile not found in current directory."
+    exit 1
 fi
+
+# find NODE_RANK from hostfile
+NODE_RANK=$(grep -nxw "$HOSTNAME" hostfile | cut -d: -f1 || true)
+if [[ -z "$NODE_RANK" ]]; then
+    echo "Error: $HOSTNAME not found in hostfile."
+    exit 1
+fi
+NODE_RANK=$((NODE_RANK - 1))
 
 echo "Launching distributed training:"
 echo "  MASTER_ADDR=${MASTER_ADDR}"
