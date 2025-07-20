@@ -287,7 +287,7 @@ class Trainer:
         avg_loss, ppl = self._eval_loader(loader=self.full_val_loader) 
         if self.global_rank == 0:
             wandb.log({"val/full_loss": avg_loss, "val/full_ppl": ppl, "step": self.global_step})
-            print(f"[FULL VAL] step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")    
+            print(f"[FULL VAL] epoch={self.current_epoch:.4f} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")    
         return avg_loss, ppl 
         
 
@@ -295,8 +295,8 @@ class Trainer:
         avg_loss, ppl = self._eval_loader(loader=self.quick_val_loader) 
         self.last_quick_ppl = ppl 
         if self.global_rank == 0:
-            wandb.log({"val/quick_loss": avg_loss, "val/quick_ppl": ppl, "step": self.global_step})
-            print(f"[QUICK VAL] step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
+            wandb.log({"val/quick_loss": avg_loss, "val/quick_ppl": ppl,  "step": self.global_step})
+            print(f"[QUICK VAL] epoch={self.current_epoch:.4f} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
         return avg_loss, ppl 
 
     def _run_batch(self, batch: dict[str, torch.Tensor]) -> float:
