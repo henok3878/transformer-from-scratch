@@ -25,6 +25,7 @@ dependencies = [
   "pyyaml", 
   "tokenizers",
   "pydantic",
+  "sacrebleu<2.0.0",
 ]
 
 [project.urls]

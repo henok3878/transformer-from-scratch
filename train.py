@@ -1,5 +1,6 @@
 from functools import partial
 import math
+import sacrebleu
 import os 
 import shutil
 import wandb 
@@ -14,6 +15,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist 
 from datasets import Dataset, load_from_disk 
 from tokenizers import Tokenizer 
+
 
 from config import AppConfig, load_config, TokenizationStrategy 
 from transformer.transformer import Transformer 
@@ -126,6 +128,7 @@ class Trainer:
         self.epochs_run = 0  
         self.best_step_ppl = float('inf')
         self.last_quick_ppl = float('inf')
+        self.last_full_val_step = -1 
         self._load_checkpoint()
 
     def _noam_lambda(self, step: int):
@@ -253,7 +256,96 @@ class Trainer:
             for _, filename in files_to_remove:
                 os.remove(os.path.join(self.checkpoint_dir, filename))
                 print(f"Removed old checkpoint: {filename}")
+
+    @torch.inference_mode() 
+    def _distributed_compute_bleu(self, loader: DataLoader) -> float:
+        self.model.eval() 
+        local_hyps, local_refs = [], []
+
+        for batch in loader:
+            # move to device
+            batch = {k: v.to(self.device) for k, v in batch.items()}
+
+            # greedy decode
+            preds = self._greedy_decode(
+                src_ids=batch["src_ids"],
+                src_mask=batch["src_mask"],
+                max_len=self.config.model.tgt_max_len
+            )  
+
+            # detokenise
+            local_hyps.extend(self.tokenizer_tgt.decode_batch(preds, skip_special_tokens=True))
+
+            # references already tokenised, so detokenise once
+            local_refs.extend(self.tokenizer_tgt.decode_batch(
+                batch["label"].tolist(), skip_special_tokens=True))
+        
+        world_size = self.world_size 
+        gathered_hyps: list[list[str]] = [[] for _ in range(world_size)]
+        gathered_refs: list[list[str]] = [[] for _ in range(world_size)]
+
+        dist.all_gather_object(gathered_hyps, local_hyps)
+        dist.all_gather_object(gathered_refs, local_refs)
+        
+        if self.global_rank == 0:
+            hyps = [h for sublist in gathered_hyps for h in sublist]
+            refs = [r for sublist in gathered_refs for r in sublist]
+            bleu = sacrebleu.corpus_bleu(hyps, [refs], tokenize="13a", lowercase=False)
+            score = bleu.score
+        else:
+            score = 0.0
+
+        self.model.train()
+        return score 
     
+    def _greedy_decode(self, src_ids: torch.Tensor, src_mask: torch.Tensor, max_len: int) -> list[list[int]]:
+        batch_size = src_ids.size(0) 
+        device = src_ids.device 
+
+        sos = self.tokenizer_tgt.token_to_id("[SOS]")
+        eos = self.tokenizer_tgt.token_to_id("[EOS]")
+        if sos is None or eos is None:
+            raise RuntimeError(f"Could not find SOS/EOS in vocab (SOS={sos}, EOS={eos})")
+
+        # (B, src_seq_len, d_model)
+        src_emb = self.model.module.src_embedding(src_ids)
+        kv = self.model.module.encoder(src_emb, src_mask)
+
+        ys = torch.full((batch_size, 1), sos, device=device, dtype=torch.long) 
+        finished = torch.zeros(batch_size, dtype=torch.bool, device=device)
+
+        for _ in range(max_len - 1):
+            # (B, tgt_seq_len, d_model)
+            tgt_emb = self.model.module.tgt_embedding(ys) 
+
+            # build causal mask for tgt_seq_len x tgt_seq_len
+            tgt_seq_len = ys.size(1)
+            tgt_mask = torch.tril(torch.ones((tgt_seq_len, tgt_seq_len), device=device)).bool()           
+            # (1,1,tgt_seq_len,tgt_seq_len)
+            tgt_mask = tgt_mask.unsqueeze(0).unsqueeze(0)    
+
+            # (B, tgt_seq_len, d_model)
+            dec_out = self.model.module.decoder(
+                tgt_emb,
+                kv,
+                target_mask=tgt_mask,
+                kv_mask=src_mask
+            ) 
+
+            # (B, tgt_seq_len, vocab_size)
+            logits = self.model.module.output_proj(dec_out) 
+
+            # greedily pick next token
+            next_tok = logits[:, -1, :].argmax(dim=-1, keepdim=True) 
+            # (B, tgt_seq_len+1)
+            ys = torch.cat([ys, next_tok], dim=1)
+
+            finished |= (next_tok.squeeze(-1) == eos)
+            if finished.all():
+                break
+
+        return ys.tolist()
+        
     @torch.inference_mode()
     def _eval_loader(self, loader: DataLoader): 
         self.model.eval() 
@@ -285,9 +377,11 @@ class Trainer:
     
     def _run_full_validation(self):
         avg_loss, ppl = self._eval_loader(loader=self.full_val_loader) 
+        train_bleu = self._distributed_compute_bleu(self.quick_val_loader)
         if self.global_rank == 0:
-            wandb.log({"val/full_loss": avg_loss, "val/full_ppl": ppl, "step": self.global_step})
-            print(f"[FULL VAL] epoch={self.current_epoch:.4f} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")    
+            wandb.log({"val/full_loss": avg_loss, "val/full_ppl": ppl, "val/bleu": train_bleu, "step": self.global_step})
+            print(f"[FULL VAL] epoch={self.current_epoch} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f} bleu={train_bleu:.2f}")    
+        self.last_full_val_step = self.global_step 
         return avg_loss, ppl 
         
 
@@ -296,7 +390,7 @@ class Trainer:
         self.last_quick_ppl = ppl 
         if self.global_rank == 0:
             wandb.log({"val/quick_loss": avg_loss, "val/quick_ppl": ppl,  "step": self.global_step})
-            print(f"[QUICK VAL] epoch={self.current_epoch:.4f} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
+            print(f"[QUICK VAL] epoch={self.current_epoch} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
         return avg_loss, ppl 
 
     def _run_batch(self, batch: dict[str, torch.Tensor]) -> float:
