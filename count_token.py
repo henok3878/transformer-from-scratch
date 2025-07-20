@@ -9,7 +9,7 @@ def count_tokens(batch):
 
 def main():
     parser = argparse.ArgumentParser() 
-    parser.add_argument("--processed_dir", type=str, default="data/processed-joint-de-en-vocab32000")
+    parser.add_argument("--processed_dir", type=str, default="data/processed-joint-de-en-vocab37000/train")
     parser.add_argument("--num_workers", type=int, default=8) 
     
     args = parser.parse_args()
@@ -30,9 +30,13 @@ def main():
 
 if __name__ == "__main__":
     main() 
+
 """
-Loading dataset from disk: 100%|██████████████| 28/28 [00:05<00:00,  5.07it/s]
-Totol source tokens: 841370392
-Total target tokens: 870185119
-Total: 1711555511 ~
+wmt19: 
+    Totol source tokens: 841370392
+    Total target tokens: 870185119
+
+wmt14: 
+    Totol source tokens: 140867621
+    Total target tokens: 144259471
 """
