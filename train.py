@@ -362,8 +362,8 @@ class Trainer:
         for epoch in range(self.epochs_run, self.config.training.epochs):
             self.current_epoch = epoch 
             self._run_epoch(epoch)
+            self._run_full_validation()
             if self.global_rank == 0:
-                self._run_full_validation()
                 self._save_checkpoint(epoch, is_epoch=True)
 
 def main():
