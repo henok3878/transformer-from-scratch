@@ -18,7 +18,8 @@ from tokenizers import Tokenizer
 
 
 from config import AppConfig, load_config, TokenizationStrategy 
-from transformer.transformer import Transformer 
+from transformer.transformer import Transformer
+from transformer.components.decoding import greedy_search 
 
 def ddp_setup():
     """initializes the distributed process group"""
@@ -95,6 +96,7 @@ class Trainer:
                 project="transformer-from-scratch",
                 name=os.path.basename(run_path),
                 config=config.model_dump(),
+                id="mxqlvviv", 
                 dir=self.log_dir,
                 resume="allow"
             )
@@ -267,9 +269,11 @@ class Trainer:
             batch = {k: v.to(self.device) for k, v in batch.items()}
 
             # greedy decode
-            preds = self._greedy_decode(
+            preds = greedy_search(
+                model=self.model,
                 src_ids=batch["src_ids"],
                 src_mask=batch["src_mask"],
+                tokenizer_tgt=self.tokenizer_tgt,
                 max_len=self.config.model.tgt_max_len
             )  
 
@@ -298,54 +302,7 @@ class Trainer:
         self.model.train()
         return score 
     
-    def _greedy_decode(self, src_ids: torch.Tensor, src_mask: torch.Tensor, max_len: int) -> list[list[int]]:
-        batch_size = src_ids.size(0) 
-        device = src_ids.device 
 
-        sos = self.tokenizer_tgt.token_to_id("[SOS]")
-        eos = self.tokenizer_tgt.token_to_id("[EOS]")
-        if sos is None or eos is None:
-            raise RuntimeError(f"Could not find SOS/EOS in vocab (SOS={sos}, EOS={eos})")
-
-        # (B, src_seq_len, d_model)
-        src_emb = self.model.module.src_embedding(src_ids)
-        kv = self.model.module.encoder(src_emb, src_mask)
-
-        ys = torch.full((batch_size, 1), sos, device=device, dtype=torch.long) 
-        finished = torch.zeros(batch_size, dtype=torch.bool, device=device)
-
-        for _ in range(max_len - 1):
-            # (B, tgt_seq_len, d_model)
-            tgt_emb = self.model.module.tgt_embedding(ys) 
-
-            # build causal mask for tgt_seq_len x tgt_seq_len
-            tgt_seq_len = ys.size(1)
-            tgt_mask = torch.tril(torch.ones((tgt_seq_len, tgt_seq_len), device=device)).bool()           
-            # (1,1,tgt_seq_len,tgt_seq_len)
-            tgt_mask = tgt_mask.unsqueeze(0).unsqueeze(0)    
-
-            # (B, tgt_seq_len, d_model)
-            dec_out = self.model.module.decoder(
-                tgt_emb,
-                kv,
-                target_mask=tgt_mask,
-                kv_mask=src_mask
-            ) 
-
-            # (B, tgt_seq_len, vocab_size)
-            logits = self.model.module.output_proj(dec_out) 
-
-            # greedily pick next token
-            next_tok = logits[:, -1, :].argmax(dim=-1, keepdim=True) 
-            # (B, tgt_seq_len+1)
-            ys = torch.cat([ys, next_tok], dim=1)
-
-            finished |= (next_tok.squeeze(-1) == eos)
-            if finished.all():
-                break
-
-        return ys.tolist()
-        
     @torch.inference_mode()
     def _eval_loader(self, loader: DataLoader): 
         self.model.eval() 
@@ -471,7 +428,8 @@ def main():
     run_path: str
     if int(os.environ["RANK"]) == 0:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_name = f"{config.data.dataset_name}_{config.data.lang_src}-{config.data.lang_tgt}_{timestamp}"
+        # run_name = f"{config.data.dataset_name}_{config.data.lang_src}-{config.data.lang_tgt}_{timestamp}"
+        run_name = "wmt14_en-de_20250720_094034"
         run_path = os.path.join(config.experiment.base_dir, run_name)
         print(f"Starting new experiment: {run_path}")
         os.makedirs(run_path, exist_ok=True)
