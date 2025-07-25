@@ -29,7 +29,7 @@ experiment:
   base_dir: "experiments"
   checkpoint_dir: "checkpoints"
   save_every_steps: 10000 # steps
-  keep_last_n: 3
+  keep_last_n: 10 # keep last n step checkpoints
   log_every: 100 # log every N batches
   log_dir: "logs"
 

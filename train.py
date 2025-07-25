@@ -128,8 +128,6 @@ class Trainer:
         self.current_epoch = 0 
         # the index of the epoch to start when (re)enter training 
         self.epochs_run = 0  
-        self.best_step_ppl = float('inf')
-        self.last_quick_ppl = float('inf')
         self.last_full_val_step = -1 
         self._load_checkpoint()
 
@@ -202,7 +200,6 @@ class Trainer:
         self.scheduler.load_state_dict(state_dict=checkpoint['scheduler_state_dict']) 
         self.global_step = checkpoint["global_step"]
         self.epochs_run = checkpoint["epoch"] + 1
-        self.best_step_ppl = checkpoint.get('best_step_ppl', float('inf'))
         self.current_epoch = self.epochs_run 
         if self.global_rank == 0:
             print(f"Resumed training from epoch {self.epochs_run}")
@@ -225,7 +222,6 @@ class Trainer:
             'model_state_dict': self.model.module.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             "scheduler_state_dict": self.scheduler.state_dict(),
-            "best_step_ppl": self.best_step_ppl
         }
         
         torch.save(checkpoint, ckp_path)
@@ -248,8 +244,11 @@ class Trainer:
         checkpoint_files = []
         for file in os.listdir(self.checkpoint_dir):
             if file.startswith("checkpoint_step_") and file.endswith(".pt"):
-                epoch_num = int(file.split("_")[2].split(".")[0])
-                checkpoint_files.append((epoch_num, file))
+                try:
+                    step_num = int(file.split("_")[2].split(".")[0])
+                    checkpoint_files.append((step_num, file))
+                except Exception:
+                    continue
         
         # sort by step and keep only the last N
         checkpoint_files.sort(key=lambda x: x[0])
@@ -344,7 +343,6 @@ class Trainer:
 
     def _run_quick_validation(self): 
         avg_loss, ppl = self._eval_loader(loader=self.quick_val_loader) 
-        self.last_quick_ppl = ppl 
         if self.global_rank == 0:
             wandb.log({"val/quick_loss": avg_loss, "val/quick_ppl": ppl,  "step": self.global_step})
             print(f"[QUICK VAL] epoch={self.current_epoch} step={self.global_step} loss={avg_loss:.4f} ppl={ppl:.2f}")
@@ -393,9 +391,7 @@ class Trainer:
 
             # checkpoint
             if self.global_step % self.config.experiment.save_every_steps == 0:
-                if self.last_quick_ppl <= self.best_step_ppl:
-                    self.best_step_ppl = self.last_quick_ppl  
-                    self._save_checkpoint(self.global_step, is_epoch=False)
+                self._save_checkpoint(self.global_step, is_epoch=False)
 
         return loss.item()
 
