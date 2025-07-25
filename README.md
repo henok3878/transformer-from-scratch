@@ -52,8 +52,6 @@ This project uses [Weights & Biases (wandb)](https://wandb.ai/) for experiment t
     ```
 3.  Once you've logged in, the training script (`train.py`) will automatically create a new run in your `wandb` project (`transformer-from-scratch`). You can monitor your experiments live from your `wandb` dashboard.
 
-[**View Project on W&B &rarr;**](https://wandb.ai/henokwondimu/transformer-from-scratch)
-
 ## Project Structure
 
 ```
@@ -117,6 +115,8 @@ bash run_dist.sh
 Checkpoints are saved under `experiments/` and tracked with wandb.
 
 ## Training & Evaluation Results
+
+[**View Project on W&B &rarr;**](https://wandb.ai/henokwondimu/transformer-from-scratch)
 
 - **Training Loss:**  
   ![Training Loss](plots/train_loss.png)
