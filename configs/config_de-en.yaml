@@ -13,7 +13,7 @@ model:
 training:
   seed: 42
   batch_size: 144
-  epochs: 32
+  epochs: 24
   lr_factor: 1.0
   num_workers: 8
   quick_val_size: 1024 # 1024 examples for quick eval
@@ -21,7 +21,9 @@ training:
   full_eval_every: 10000 # steps
   warmup_steps: 4000
   weight_decay: 0.01
-  adam_eps: 1e-8
+  adam_eps: 1e-9
+  adam_beta1: 0.9
+  adam_beta2: 0.98
   label_smoothing: 0.1
   max_grad_norm: 1.0
 

@@ -28,6 +28,8 @@ class TrainingConfig(BaseModel):
     warmup_steps: int 
     weight_decay: float 
     adam_eps: float
+    adam_beta1: float 
+    adam_beta2: float
     label_smoothing: float 
     max_grad_norm: float 
 
