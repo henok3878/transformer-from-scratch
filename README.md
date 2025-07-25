@@ -17,7 +17,7 @@ conda env create -f environment-cpu.yml
 conda activate transformer-cpu
 
 # GPU version (with CUDA)
-conda env create -f environment-gpu.yml  
+conda env create -f environment-gpu.yml
 conda activate transformer-gpu
 ```
 
@@ -27,7 +27,7 @@ conda activate transformer-gpu
 
 ```bash
 black src/ tests/     # Format code
-isort src/ tests/     # Sort imports  
+isort src/ tests/     # Sort imports
 flake8 src/ tests/    # Lint code
 mypy src/            # Type checking
 ```
@@ -50,7 +50,7 @@ This project uses [Weights & Biases (wandb)](https://wandb.ai/) for experiment t
     ```bash
     wandb login
     ```
-3. Once you've logged in, the training script (`train.py`) will automatically create a new run in your `wandb` project (`transformer-from-scratch`). You can monitor your experiments live from your `wandb` dashboard.
+3.  Once you've logged in, the training script (`train.py`) will automatically create a new run in your `wandb` project (`transformer-from-scratch`). You can monitor your experiments live from your `wandb` dashboard.
 
 [**View Project on W&B &rarr;**](https://wandb.ai/henokwondimu/transformer-from-scratch)
 
@@ -71,6 +71,67 @@ src/transformer/
 
 tests/                         # Unit tests
 ```
+
+## Model Training
+
+This project supports both single-node single-GPU and distributed multi-GPU training.
+
+### Single-Node Single-GPU Training
+
+For basic training on one GPU, simply run:
+
+```bash
+python train.py --config configs/config_de-en.yaml
+```
+
+No `.env` or `hostfile` setup is required.
+
+---
+
+### Multi-GPU Training (Single-Node or Multi-Node)
+
+For training on multiple GPUs (either on one node or across several nodes), set up your `.env` file:
+
+```properties
+MASTER_ADDR=node001      # or your master node's hostname
+MASTER_PORT=29500
+NNODES=1                   # set to 1 for single-node, >1 for multi-node
+GPUS_PER_NODE=2            # set to number of GPUs per node
+NCCL_DEBUG=INFO
+```
+
+For multi-node training, also create a `hostfile` listing all participating nodes one per line in order of rank (master node first, then worker nodes):
+
+```
+node001
+node002
+node003
+```
+
+Then launch distributed training by running the following command on each node:
+
+```bash
+bash run_dist.sh
+```
+
+Checkpoints are saved under `experiments/` and tracked with wandb.
+
+## Training & Evaluation Results
+
+- **Training Loss:**  
+  ![Training Loss](plots/train_loss.png)
+
+- **Quick Validation Loss (subset, every 1000 steps):**  
+  ![Quick Validation Loss](plots/quick_val_loss.png)
+
+- **Full Validation Loss (entire set, every 10,000 steps):**  
+  ![Full Validation Loss](plots/full_val_loss.png)
+
+- **Validation BLEU (greedy search, every 10,000 steps):**  
+  ![Validation BLEU](plots/val_bleu.png)
+
+- **Final Test BLEU (beam search, beam size=4):**
+  Using the default configuration, the model achieved a BLEU score of **25.53** on the official WMT14 test set (news-test) using beam search with beam size 4.
 
 ## License
 
