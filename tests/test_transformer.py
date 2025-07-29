@@ -42,8 +42,8 @@ def test_transformer_shape_and_dtype_separate(
         tgt_max_len=100,
     )
     data_config = DataConfig(
-        "dataset_name", "subset", "en", "de", 
-        TokenizationStrategy(tokenization_strategy)
+        dataset_name="dataset_name", subset="subset", lang_src="en", lang_tgt="de", tokenization_strategy=
+        TokenizationStrategy(tokenization_strategy), validation_fraction=0.1
     )
     model = Transformer(model_config, data_config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
@@ -86,8 +86,8 @@ def test_transformer_mask_optional_and_broadcasting(
         tgt_max_len=100,
     )
     data_config = DataConfig(
-        "dataset_name", "subset", "en", "de", 
-        TokenizationStrategy(tokenization_strategy)
+        dataset_name="dataset_name", subset="subset", lang_src="en", lang_tgt="de", tokenization_strategy=
+        TokenizationStrategy(tokenization_strategy), validation_fraction=0.1
     )
     model = Transformer(model_config, data_config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
@@ -132,8 +132,8 @@ def test_transformer_backprop_smoke(
         tgt_max_len=100,
     )
     data_config = DataConfig(
-        "dataset_name", "subset", "en", "de", 
-        TokenizationStrategy(tokenization_strategy)
+        dataset_name="dataset_name", subset="subset", lang_src="en", lang_tgt="de", tokenization_strategy=
+        TokenizationStrategy(tokenization_strategy), validation_fraction=0.1
     )
     model = Transformer(model_config, data_config)
     src_ids = torch.randint(0, src_vocab_size, (batch_size, src_seq_len))
