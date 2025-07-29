@@ -4,8 +4,10 @@ import torch.nn as nn
 from typing import Union
 import torch.nn.functional as F
 
+from transformer.components.base.attention import BaseAttention
 
-class MultiHeadAttention(nn.Module):
+
+class MultiHeadAttention(BaseAttention):
     def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1):
         super().__init__()
         self.d_model = d_model

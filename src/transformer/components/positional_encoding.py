@@ -2,8 +2,10 @@ import math
 import torch
 import torch.nn as nn
 
+from transformer.components.base.positional_encoding import BasePositionalEncoding
 
-class PositionalEncoding(nn.Module):
+
+class PositionalEncoding(BasePositionalEncoding):
     def __init__(self, seq_len: int, d_model: int, dropout=0.1):
         super().__init__()
         self.seq_len = seq_len
