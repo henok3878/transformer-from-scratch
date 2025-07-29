@@ -116,7 +116,7 @@ Checkpoints are saved under `experiments/` and tracked with wandb.
 
 ## Training & Evaluation Results
 
-[**View Project on W&B &rarr;**](https://wandb.ai/henokwondimu/transformer-from-scratch)
+[**View Project on W&B &rarr;**](https://wandb.ai/henokwondimu/transformer-from-scratch/runs/mxqlvviv?nw=nwuserhenok3878)
 
 - **Training Loss:**  
   ![Training Loss](plots/train_loss.png)
