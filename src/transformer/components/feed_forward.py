@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 
+from transformer.components.base.feed_forward import BaseFeedForward
 
-class PositionwiseFeedForward(nn.Module):
-    def __init__(self, d_model: int, d_ff: int, dropout: float = 0.1):
+
+class PositionwiseFeedForward(BaseFeedForward):
+    def __init__(self, d_model: int, d_ff: int, dropout: float = 0.1, **kwargs):
         super().__init__()
         self.d_model = d_model
         self.d_ff = d_ff
