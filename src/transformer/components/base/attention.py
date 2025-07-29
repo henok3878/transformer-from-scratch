@@ -3,6 +3,13 @@ import torch.nn as nn
 from abc import ABC, abstractmethod  
 
 class BaseAttention(nn.Module, ABC):
+    """
+    Base class for all attention modules. 
+    
+    All attention modules should implement:
+        - __init__(self, d_model: int, num_heads: int, dropout: float = 0.1, **kwargs)
+        - forward(self, x: torch.Tensor, kv: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor
+    """
     
     @abstractmethod
     def forward(

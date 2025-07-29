@@ -6,7 +6,7 @@ from transformer.components.base.positional_encoding import BasePositionalEncodi
 
 
 class PositionalEncoding(BasePositionalEncoding):
-    def __init__(self, seq_len: int, d_model: int, dropout=0.1):
+    def __init__(self, seq_len: int, d_model: int, dropout=0.1, **kwargs):
         super().__init__()
         self.seq_len = seq_len
         self.d_model = d_model

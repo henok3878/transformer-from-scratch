@@ -1,10 +1,13 @@
 import torch
 from transformer.components.decoder_layer import DecoderLayer
+from transformer.components.feed_forward import PositionwiseFeedForward
+from transformer.components.layer_norm import LayerNorm
+from transformer.components.multi_head import MultiHeadAttention
 
 
 def test_forward_shape():
     batch_size, seq_len, d_model, d_ff, num_heads = 4, 32, 16, 32, 4
-    decoder_layer = DecoderLayer(d_model, d_ff, num_heads)
+    decoder_layer = DecoderLayer(d_model, d_ff, num_heads, attention_cls=MultiHeadAttention, feedforward_cls=PositionwiseFeedForward, norm_cls=LayerNorm)
     x = torch.randn(batch_size, seq_len, d_model)
     decoder_output = decoder_layer(x, x)
 
@@ -23,7 +26,7 @@ def test_forward_shape_with_mask():
 
     # letting pytorch handle the actual mask shape via braodcasting
     mask = torch.tril(torch.ones(tgt_seq_len, tgt_seq_len))
-    decoder_layer = DecoderLayer(d_model, d_ff, num_heads)
+    decoder_layer = DecoderLayer(d_model, d_ff, num_heads, attention_cls=MultiHeadAttention, feedforward_cls=PositionwiseFeedForward, norm_cls=LayerNorm)
     # the target sequence
     x = torch.randn(batch_size, tgt_seq_len, d_model)
     # output of the encoder

@@ -1,36 +1,70 @@
 import torch
 import torch.nn as nn
+from typing import Type 
+from transformer.components.base.attention import BaseAttention
+from transformer.components.base.feed_forward import BaseFeedForward
 from transformer.components.encoder import Encoder
 from transformer.components.decoder import Decoder
+from transformer.components.feed_forward import PositionwiseFeedForward
 from transformer.components.input_embedding import InputEmbedding
+from transformer.components.layer_norm import LayerNorm
+from transformer.components.multi_head import MultiHeadAttention
 from transformer.components.positional_encoding import PositionalEncoding
 from config import DataConfig, ModelConfig, TokenizationStrategy
 
 class Transformer(nn.Module):
-    def __init__(self, model_config: ModelConfig, data_config: DataConfig):
+    def __init__(
+        self, 
+        model_config: ModelConfig,
+        data_config: DataConfig, 
+        attention_cls: Type[BaseAttention] | None = None,
+        feedforward_cls: Type[BaseFeedForward] | None = None,
+        norm_cls: Type[nn.Module] | None = None,
+        positional_encoding_cls: Type[nn.Module] | None = None,
+        use_input_positional_encoding: bool = True,
+        **kwargs
+        ):
         super().__init__()
 
+        if attention_cls is None:
+            attention_cls = MultiHeadAttention
+        if feedforward_cls is None:
+            feedforward_cls = PositionwiseFeedForward
+        if norm_cls is None:
+            norm_cls = LayerNorm
+        if use_input_positional_encoding and positional_encoding_cls is None:
+            positional_encoding_cls = PositionalEncoding
+
         is_joint_vocab = data_config.tokenization_strategy == TokenizationStrategy.JOINT
-         
-        self.src_embedding = nn.Sequential(
-            InputEmbedding(model_config.src_vocab_size, model_config.d_model),
-            PositionalEncoding(
-                d_model=model_config.d_model,
-                seq_len=model_config.src_max_len,
-                dropout=model_config.dropout,
-            ),
-        )
-        if is_joint_vocab:
-            self.tgt_embedding = self.src_embedding
-        else:
-            self.tgt_embedding = nn.Sequential(
-                InputEmbedding(model_config.tgt_vocab_size, model_config.d_model),
-                PositionalEncoding(
+        
+        if use_input_positional_encoding:
+            assert positional_encoding_cls is not None
+            self.src_embedding = nn.Sequential(
+                InputEmbedding(model_config.src_vocab_size, model_config.d_model),
+                positional_encoding_cls(
                     d_model=model_config.d_model,
-                    seq_len=model_config.tgt_max_len,
+                    seq_len=model_config.src_max_len,
                     dropout=model_config.dropout,
                 ),
             )
+        else:
+            self.src_embedding = InputEmbedding(model_config.src_vocab_size, model_config.d_model)
+
+        if is_joint_vocab:
+            self.tgt_embedding = self.src_embedding
+        else:
+            if use_input_positional_encoding:
+                assert positional_encoding_cls is not None
+                self.tgt_embedding = nn.Sequential(
+                    InputEmbedding(model_config.tgt_vocab_size, model_config.d_model),
+                    positional_encoding_cls(
+                        d_model=model_config.d_model,
+                        seq_len=model_config.tgt_max_len,
+                        dropout=model_config.dropout,
+                    ),
+                )
+            else:
+                self.tgt_embedding = InputEmbedding(model_config.tgt_vocab_size, model_config.d_model)
 
         self.encoder = Encoder(
             num_layers=model_config.num_encoder_layers,
@@ -38,6 +72,10 @@ class Transformer(nn.Module):
             d_ff=model_config.d_ff,
             num_heads=model_config.num_heads,
             dropout=model_config.dropout,
+            attention_cls=attention_cls,
+            feedforward_cls=feedforward_cls,
+            norm_cls=norm_cls,
+            **kwargs
         )
 
         self.decoder = Decoder(
@@ -46,6 +84,10 @@ class Transformer(nn.Module):
             d_ff=model_config.d_ff,
             num_heads=model_config.num_heads,
             dropout=model_config.dropout,
+            attention_cls=attention_cls,
+            feedforward_cls=feedforward_cls,
+            norm_cls=norm_cls,
+            **kwargs
         )
 
         self.output_proj = nn.Linear(model_config.d_model, model_config.tgt_vocab_size)

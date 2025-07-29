@@ -8,7 +8,7 @@ from transformer.components.base.attention import BaseAttention
 
 
 class MultiHeadAttention(BaseAttention):
-    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1):
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1, **kwargs):
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads  # h in the paper
