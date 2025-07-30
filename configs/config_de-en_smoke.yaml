@@ -1,6 +1,6 @@
 model:
-  src_vocab_size: 32000
-  tgt_vocab_size: 32000
+  src_vocab_size: 37000
+  tgt_vocab_size: 37000
   d_model: 32
   num_heads: 2
   d_ff: 64
@@ -19,9 +19,11 @@ training:
   quick_val_size: 100 # ~100 tokens for quick eval
   quick_eval_every: 10 # steps
   full_eval_every: 20 # steps
-  warmup_steps: 15000
+  warmup_steps: 1000
   weight_decay: 0.01
-  adam_eps: 1e-8
+  adam_eps: 1e-9
+  adam_beta1: 0.9
+  adam_beta2: 0.98
   label_smoothing: 0.0
   max_grad_norm: 1.0
 
