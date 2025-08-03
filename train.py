@@ -17,7 +17,7 @@ from datasets import Dataset, load_from_disk
 from tokenizers import Tokenizer 
 
 
-from config import AppConfig, load_config, TokenizationStrategy 
+from transformer.config import AppConfig, load_config, TokenizationStrategy 
 from transformer.transformer import Transformer
 from transformer.components.decoding import greedy_search 
 
@@ -92,11 +92,12 @@ class Trainer:
         self.log_dir = os.path.join(run_path, config.experiment.log_dir)
 
         if self.global_rank == 0:
+            name = os.path.basename(p=run_path)
             wandb.init(
                 project="transformer-from-scratch",
-                name=os.path.basename(run_path),
+                name=name,
                 config=config.model_dump(),
-                id="mxqlvviv", 
+                id=name, 
                 dir=self.log_dir,
                 resume="allow"
             )
@@ -424,8 +425,7 @@ def main():
     run_path: str
     if int(os.environ["RANK"]) == 0:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        # run_name = f"{config.data.dataset_name}_{config.data.lang_src}-{config.data.lang_tgt}_{timestamp}"
-        run_name = "wmt14_en-de_20250720_094034"
+        run_name = f"{config.data.dataset_name}_{config.data.lang_src}-{config.data.lang_tgt}_{timestamp}"
         run_path = os.path.join(config.experiment.base_dir, run_name)
         print(f"Starting new experiment: {run_path}")
         os.makedirs(run_path, exist_ok=True)

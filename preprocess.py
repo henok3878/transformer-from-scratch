@@ -9,7 +9,7 @@ from tokenizers.pre_tokenizers import ByteLevel
 from tokenizers.processors import TemplateProcessing
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 
-from src.config import TokenizationStrategy, load_config 
+from transformer.config import TokenizationStrategy, load_config 
 
 def get_all_sentences(ds: IterableDataset | IterableDatasetDict, lang: str):
     """Generator to yield sentences for a single language from the dataset"""

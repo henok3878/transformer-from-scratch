@@ -10,7 +10,7 @@ from transformer.components.input_embedding import InputEmbedding
 from transformer.components.layer_norm import LayerNorm
 from transformer.components.multi_head import MultiHeadAttention
 from transformer.components.positional_encoding import PositionalEncoding
-from config import AppConfig, DataConfig, ModelConfig, TokenizationStrategy
+from transformer.config import AppConfig, DataConfig, ModelConfig, TokenizationStrategy
 
 class Transformer(nn.Module):
     def __init__(

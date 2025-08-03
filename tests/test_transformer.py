@@ -1,7 +1,7 @@
 import torch
 import pytest
 from transformer.transformer import Transformer
-from config import ModelConfig, DataConfig, TokenizationStrategy 
+from transformer.config import ModelConfig, DataConfig, TokenizationStrategy 
 
 
 @pytest.fixture(autouse=True)
