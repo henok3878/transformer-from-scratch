@@ -10,7 +10,7 @@ from transformer.components.input_embedding import InputEmbedding
 from transformer.components.layer_norm import LayerNorm
 from transformer.components.multi_head import MultiHeadAttention
 from transformer.components.positional_encoding import PositionalEncoding
-from config import DataConfig, ModelConfig, TokenizationStrategy
+from config import AppConfig, DataConfig, ModelConfig, TokenizationStrategy
 
 class Transformer(nn.Module):
     def __init__(
@@ -106,6 +106,20 @@ class Transformer(nn.Module):
             elif isinstance(module, nn.LayerNorm):
                 nn.init.ones_(module.weight)
                 nn.init.zeros_(module.bias)
+
+    @staticmethod 
+    def load_from_checkpoint(checkpoint_path: str, config: AppConfig, device: torch.device = torch.device("cpu")):
+        model = Transformer(config.model, config.data).to(device)
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        state_dict = checkpoint.get("model_state_dict", checkpoint)
+
+        # remove '_orig_mod.' prefix if present
+        if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+            state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
+
+        model.load_state_dict(state_dict)
+        model.eval()
+        return model
 
     def forward(
         self,
