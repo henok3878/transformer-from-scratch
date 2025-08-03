@@ -42,3 +42,6 @@ wandb/
 # ignore env variables 
 .env
 hostfile 
+
+# ignore hugging face space
+/transformer-demo/
