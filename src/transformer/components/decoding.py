@@ -1,6 +1,8 @@
 import torch
 
 def greedy_search(model, src_ids, src_mask, tokenizer_tgt, max_len):
+    if hasattr(model, "module"):
+        model = model.module 
     batch_size = src_ids.size(0)
     device = src_ids.device
 
@@ -37,6 +39,9 @@ def greedy_search(model, src_ids, src_mask, tokenizer_tgt, max_len):
     return ys.tolist()
 
 def beam_search(model, src_ids, src_mask, tokenizer_tgt, max_len, beam_size=4):
+    if hasattr(model, "module"):
+        model = model.module 
+
     batch_size = src_ids.size(0)
     device = src_ids.device
 
