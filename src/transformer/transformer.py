@@ -94,7 +94,12 @@ class Transformer(nn.Module):
 
         self._init_weights()
 
-        self.output_proj.weight = self.tgt_embedding[0].embedding.weight # type: ignore  
+        if isinstance(self.tgt_embedding, nn.Sequential): 
+            # pos encoding is used and embd is inside nn.Sequential 
+            self.output_proj.weight = self.tgt_embedding[0].embedding.weight # type: ignore  
+        else:
+            # no pos encoding used 
+            self.output_proj.weight = self.tgt_embedding.embedding.weight # type: ignore  
 
     
     def _init_weights(self):
