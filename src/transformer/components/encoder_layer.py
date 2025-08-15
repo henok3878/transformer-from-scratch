@@ -14,11 +14,11 @@ class EncoderLayer(nn.Module):
 
         self.self_attn = attention_cls(d_model, num_heads, dropout, **kwargs)
         self.dropout_attn = nn.Dropout(dropout)
-        self.norm_attn = norm_cls(d_model, **kwargs)
+        self.norm_attn = norm_cls(d_model)
 
         self.ffn = feedforward_cls(d_model, d_ff, dropout, **kwargs)
         self.dropout_ffn = nn.Dropout(dropout)
-        self.norm_ffn = norm_cls(d_model, **kwargs)
+        self.norm_ffn = norm_cls(d_model)
 
     def forward(
         self, x: torch.Tensor, source_mask: torch.Tensor | None = None

@@ -15,15 +15,15 @@ class DecoderLayer(nn.Module):
 
         self.self_attn = attention_cls(d_model, num_heads, dropout, **kwargs)
         self.dropout_self_attn = nn.Dropout(dropout)
-        self.norm_self_attn = norm_cls(d_model, **kwargs)
+        self.norm_self_attn = norm_cls(d_model)
 
         self.cross_attn = attention_cls(d_model, num_heads, dropout, **kwargs)
         self.dropout_cross_attn = nn.Dropout(dropout)
-        self.norm_cross_attn = norm_cls(d_model, **kwargs)
+        self.norm_cross_attn = norm_cls(d_model)
 
         self.ffn = feedforward_cls(d_model, d_ff, dropout, **kwargs)
         self.dropout_ffn = nn.Dropout(dropout)
-        self.norm_ffn = norm_cls(d_model, **kwargs)
+        self.norm_ffn = norm_cls(d_model)
 
     def forward(
         self,
